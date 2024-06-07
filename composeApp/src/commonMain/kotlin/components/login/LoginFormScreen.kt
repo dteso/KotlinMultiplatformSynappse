@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -33,7 +34,19 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.Navigator
-import components.UiComponentFactory
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+//import kotlinx.serialization.Serializable
+//import kotlinx.serialization.encodeToString
+//import kotlinx.serialization.json.Json
+
+//@Serializable
+class LoginModel (name: String, password: String)
 
 class LoginFormScreen {
 
@@ -134,12 +147,31 @@ class LoginFormScreen {
                     )
 
                     Spacer(modifier = Modifier.height(35.dp))
-                    UiComponentFactory().createNavigationButton(screenOnSuccess, navigator, "Login")
+                    Button( onClick = {
+                        GlobalScope.launch{
+                            requestLogin(username, password)
+                        }
+                    }){
+                        Text("L O G I N")
+                    }
                 }
-
             }
-
         }
     }
 
+    private suspend fun requestLogin(name: TextFieldValue, password: TextFieldValue){
+        val client = HttpClient(CIO)
+        var bodyRaw = "{ 'name': '${name.text}', 'password': '${password.text}' }"
+        bodyRaw = bodyRaw.replace("'", "\"")
+        println(" REQUESTING LOGIN WITH BODY: \n ${bodyRaw}")
+        val response: HttpResponse = client.post("http://192.168.1.42:4411/api/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(bodyRaw)
+        }
+        if(response.status == HttpStatusCode.OK){
+            println("RESPONSE OK: \n ${response.bodyAsText()}")
+        }else{
+            println("ERROR PERFORMING REQUEST [${response.status}]: \n ${response.bodyAsText()}")
+        }
+    }
 }

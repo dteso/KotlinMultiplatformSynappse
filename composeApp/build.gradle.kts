@@ -37,23 +37,34 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.transitions)
             implementation(compose.runtime)
             implementation(compose.foundation)
-            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.uiToolingPreview)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
+            // MATERIAL 3
+            implementation(compose.material3)
+            //DATETIME
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-
+            //KTOR
+            implementation("io.ktor:ktor-client-core:2.3.11")
+            implementation("io.ktor:ktor-client-cio:2.3.11")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.11") // Reemplaza con la versión más reciente
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.okhttp)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            // MATERIAL 3
             implementation("org.jetbrains.compose.material3:material3-desktop:1.2.1")
+            // CORROUTINES
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
         }
     }
 }
