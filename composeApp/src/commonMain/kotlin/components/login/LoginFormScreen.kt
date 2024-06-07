@@ -41,12 +41,15 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-//import kotlinx.serialization.Serializable
-//import kotlinx.serialization.encodeToString
-//import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
-//@Serializable
-class LoginModel (name: String, password: String)
+@Serializable
+class LoginModel(
+    val name: String,
+    val password: String
+){}
 
 class LoginFormScreen {
 
@@ -61,7 +64,8 @@ class LoginFormScreen {
             var password by remember { mutableStateOf(TextFieldValue("")) }
             var email by remember { mutableStateOf(TextFieldValue("")) }
             var numberText by remember { mutableStateOf(TextFieldValue("")) }
-            // for preview add same text to all the fields
+
+
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White,
@@ -165,19 +169,29 @@ class LoginFormScreen {
 
     private suspend fun requestLogin(name: TextFieldValue, password: TextFieldValue): Boolean {
         val client = HttpClient(CIO)
-        var bodyRaw = "{ 'name': '${name.text}', 'password': '${password.text}' }"
-        bodyRaw = bodyRaw.replace("'", "\"")
-        println(" REQUESTING LOGIN WITH BODY: \n ${bodyRaw}")
-        val response: HttpResponse = client.post("http://192.168.1.42:4411/api/auth/login") {
-            contentType(ContentType.Application.Json)
-            setBody(bodyRaw)
+
+        // Codificar a través del modelo a Json en formato String
+        var body: String =  Json.encodeToString(LoginModel(name.text, password.text))
+        println(" REQUESTING LOGIN WITH BODY: \n ${Json.encodeToString(body)}")
+
+        // Hacemos el proceso inverso, sólo para si queremos depurar ver que
+        // hemos decodificado al modelo correctametne
+        var loginModel = Json.decodeFromString<LoginModel>(body);
+        print(loginModel)
+
+        // Realizamos la petición al servidor
+        val url = "http://<MI_URL>/api/auth/login"
+        val response: HttpResponse = client.post(url) {
+            contentType(ContentType.Application.Json)  // Establecemos el tipo de contenido
+            setBody(body)
         }
+
+        // Verificamos la respuesta
         if(response.status == HttpStatusCode.OK){
             println("RESPONSE OK: \n ${response.bodyAsText()}")
             return true;
         }
         println("ERROR PERFORMING REQUEST [${response.status}]: \n ${response.bodyAsText()}")
         return false;
-
     }
 }
