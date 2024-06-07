@@ -17,7 +17,7 @@ Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-mu
 
 ## CONFIGURACIONES INICIALES
 
-Asegurar la versión de Gradel utilizada dese aqui:
+Asegurar la versión de Gradle utilizada dese aqui:
 
 ![alt text](image.png)
 
