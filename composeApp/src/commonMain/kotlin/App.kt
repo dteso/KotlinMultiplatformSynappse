@@ -26,7 +26,7 @@ class MainScreen: Screen {
     @Composable
     override fun Content() {
         var navigator: Navigator = LocalNavigator.currentOrThrow
-        LoginFormScreen().createLoginForm(SecondScreen(), navigator)
+        LoginFormScreen().createLoginForm(SecondScreen(), FailureScreen(), navigator)
     }
 }
 
@@ -35,8 +35,19 @@ class SecondScreen: Screen {
     override fun Content(){
         var navigator: Navigator = LocalNavigator.currentOrThrow
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            UiComponentFactory().createTextHeader("Second Screen")
-            UiComponentFactory().createNavigationButton(MainScreen(), navigator, "Back!")
+            UiComponentFactory().createTextHeader("W E L C O M E !")
+            UiComponentFactory().createNavigationButton(MainScreen(), navigator, "Back to Login")
+        }
+    }
+}
+
+class FailureScreen: Screen {
+    @Composable
+    override fun Content(){
+        var navigator: Navigator = LocalNavigator.currentOrThrow
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            UiComponentFactory().createTextHeader("H E Y !  W H O   A R E   Y O U  ?")
+            UiComponentFactory().createNavigationButton(MainScreen(), navigator, "Get out from here!")
         }
     }
 }

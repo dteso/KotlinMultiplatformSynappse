@@ -51,7 +51,7 @@ class LoginModel (name: String, password: String)
 class LoginFormScreen {
 
     @Composable
-    fun createLoginForm(screenOnSuccess: Screen, navigator: Navigator) {
+    fun createLoginForm(screenOnSuccess: Screen, screenOnFailure: Screen, navigator: Navigator) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(modifier = Modifier.height(35.dp))
 
@@ -149,7 +149,11 @@ class LoginFormScreen {
                     Spacer(modifier = Modifier.height(35.dp))
                     Button( onClick = {
                         GlobalScope.launch{
-                            requestLogin(username, password)
+                            if(requestLogin(username, password)){
+                                navigator.push(screenOnSuccess)
+                            }else{
+                                navigator.push(screenOnFailure)
+                            }
                         }
                     }){
                         Text("L O G I N")
@@ -159,7 +163,7 @@ class LoginFormScreen {
         }
     }
 
-    private suspend fun requestLogin(name: TextFieldValue, password: TextFieldValue){
+    private suspend fun requestLogin(name: TextFieldValue, password: TextFieldValue): Boolean {
         val client = HttpClient(CIO)
         var bodyRaw = "{ 'name': '${name.text}', 'password': '${password.text}' }"
         bodyRaw = bodyRaw.replace("'", "\"")
@@ -170,8 +174,10 @@ class LoginFormScreen {
         }
         if(response.status == HttpStatusCode.OK){
             println("RESPONSE OK: \n ${response.bodyAsText()}")
-        }else{
-            println("ERROR PERFORMING REQUEST [${response.status}]: \n ${response.bodyAsText()}")
+            return true;
         }
+        println("ERROR PERFORMING REQUEST [${response.status}]: \n ${response.bodyAsText()}")
+        return false;
+
     }
 }

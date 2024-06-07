@@ -56,6 +56,8 @@ kotlin {
             implementation("io.ktor:ktor-client-core:2.3.11")
             implementation("io.ktor:ktor-client-cio:2.3.11")
             implementation("io.ktor:ktor-client-content-negotiation:2.3.11") // Reemplaza con la versión más reciente
+//            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11") // Reemplaza con la versión más reciente
+//            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2") // Reemplaza con la versión más reciente
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.okhttp)
         }
