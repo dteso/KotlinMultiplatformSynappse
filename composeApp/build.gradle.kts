@@ -49,25 +49,28 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
+            implementation(compose.desktop.currentOs)
             // MATERIAL 3
             implementation(compose.material3)
             //DATETIME
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+            implementation(libs.kotlinx.datetime)
             //KTOR
-            implementation("io.ktor:ktor-client-core:2.3.11")
-            implementation("io.ktor:ktor-client-cio:2.3.11")
-            implementation("io.ktor:ktor-client-content-negotiation:2.3.11") // Reemplaza con la versión más reciente
-            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.11") // Reemplaza con la versión más reciente
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.1") // Reemplaza con la versión más reciente
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.content.negotiation) // Reemplaza con la versión más reciente
+            implementation(libs.ktor.serialization.kotlinx.json) // Reemplaza con la versión más reciente
+            implementation(libs.kotlinx.serialization.json) // Reemplaza con la versión más reciente
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.okhttp)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             // MATERIAL 3
-            implementation("org.jetbrains.compose.material3:material3-desktop:1.2.1")
+            implementation(libs.material3.desktop)
             // CORROUTINES
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.0")
+            implementation(libs.kotlinx.coroutines.android)
+            // SERIAL
+            implementation(libs.jserialcomm)
         }
     }
 }
@@ -122,5 +125,11 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+compose.resources {
+    publicResClass = true
+//    packageOfResClass = "org.synappse.project.library.resources"
+    generateResClass =  always
 }
 
