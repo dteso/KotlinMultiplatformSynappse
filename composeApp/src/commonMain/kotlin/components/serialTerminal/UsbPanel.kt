@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.Divider
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -17,6 +18,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,7 +45,6 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
     var ports by remember { mutableStateOf(SerialPortImpl.getAvailablePorts()) }
     val receivedData by SerialPortImpl.receivedData.collectAsState()
     var updatePorts by remember { mutableStateOf(false) }
-
     var sendText by remember { mutableStateOf(TextFieldValue("")) }
 
     if (updatePorts) {
@@ -152,30 +153,43 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color.White),
+                                        .background(Color.Black),
                                     horizontalArrangement = Arrangement.SpaceEvenly
                                 ) {
                                     Column(
                                         modifier = Modifier
                                             .padding(5.dp)
+                                            .fillMaxWidth()
                                             .align(Alignment.CenterVertically)
-                                            .background(Color.White)
+                                            .background(Color.Black)
                                     ) {
                                         OutlinedTextField(
-                                            modifier = Modifier.padding(5.dp).width(380.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(5.dp).width(380.dp),
                                             value = sendText,
                                             onValueChange = { newValue -> sendText = newValue },
                                             singleLine = true,
                                             label = { Text("Command") },
                                             placeholder = { Text("Your command here...") },
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedLabelColor = Color.Cyan,
+                                                unfocusedLabelColor = Color.White,
+                                                focusedBorderColor = Color.Cyan,
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White,
+                                                unfocusedBorderColor = Color.White,
+                                                cursorColor = Color.Cyan
+                                            )
                                         )
                                     }
-                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                                Row(Modifier.fillMaxWidth()){
                                     Column(
                                         horizontalAlignment = Alignment.End,
                                         modifier = Modifier
+                                            .fillMaxWidth()
                                             .align(Alignment.CenterVertically)
-                                            .background(Color.White)
+                                            .background(Color.Black)
                                             .padding(5.dp)
                                     ) {
                                         Button(
@@ -187,19 +201,21 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                                 )
                                             },
                                             colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color.DarkGray,
+                                                containerColor = Color(0xFF33FF66),
                                                 contentColor = Color.White
                                             ),
                                             modifier = Modifier
                                                 .width(110.dp)
+                                                .background(Color.Black)
                                                 .height(36.dp) // Ajusta el tamaño aquí
                                         ) {
                                             Text("Send")
                                         }
                                     }
                                 }
+                                Divider( color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp) )
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().background(Color.DarkGray)
+                                    modifier = Modifier.fillMaxWidth().background(Color.Black)
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -207,15 +223,26 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                             .fillMaxWidth()
                                     ) {
                                         receivedData.split("\n").forEach { receivedDataSplitted ->
-                                            val isInfo = receivedDataSplitted.contains("SYNAPPSE.INFO") && !receivedDataSplitted.contains("[0.0.0.0][null]")
+                                            val isInfo = receivedDataSplitted.contains("SYNAPPSE.INFO")
+                                                    && !receivedDataSplitted.contains("[0.0.0.0][null]")
+
                                             val isStatus = receivedDataSplitted.contains("SYNAPPSE.STATUS")
+
                                             val isMemory = receivedDataSplitted.contains("SYNAPPSE.MEMORY")
+
                                             val isMqtt = receivedDataSplitted.contains("SYNAPPSE.MQTT")
+                                                    && !receivedDataSplitted.contains("ERROR]")
+                                                    && !receivedDataSplitted.contains("WARNING]")
+                                                    && !receivedDataSplitted.contains("WAIT]")
                                             val isSerialInput = receivedDataSplitted.contains("SYNAPPSE.SERIAL")
+                                                    && !receivedDataSplitted.contains("ERROR]")
+                                                    && !receivedDataSplitted.contains("WARNING]")
+                                                    && !receivedDataSplitted.contains("WAIT]")
                                             val isOffline =  receivedDataSplitted.contains("SYNAPPSE.AP")
                                                     || receivedDataSplitted.contains("SYNAPPSE.NETWORK.INFO")
                                                     || receivedDataSplitted.contains("[0.0.0.0][null]")
                                             val isWarning = receivedDataSplitted.contains("WARNING]")
+                                                    || receivedDataSplitted.contains("WAIT]")
                                             val isError = receivedDataSplitted.contains("ERROR]")
 
                                             var color: Color = Color.White
