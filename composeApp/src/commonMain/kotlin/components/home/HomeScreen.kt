@@ -1,12 +1,11 @@
 package components.home
 
 import MainScreen
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material3.DrawerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
@@ -15,6 +14,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -130,13 +130,12 @@ class HomeScreen : Screen {
                     BottomBar(innerRoute) { route -> innerRoute = route }
                 }
             ) { innerPadding ->
-                LazyColumn(
+                Column (
                     modifier = Modifier
                         .fillMaxHeight()
                         .padding(innerPadding)
                         .padding(8.dp)
                 ) {
-                    item {
                         when (innerRoute) {
                             "home" -> {
                                 Dashboard() { route -> innerRoute = route }
@@ -166,7 +165,6 @@ class HomeScreen : Screen {
 //                                Info() { route -> innerRoute = route }
                             }
                         }
-                    }
                 }
             }
         }

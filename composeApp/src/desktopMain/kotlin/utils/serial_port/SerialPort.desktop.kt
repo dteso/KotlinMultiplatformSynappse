@@ -65,7 +65,7 @@ actual object SerialPortImpl : SerialPortInterface {
                         _receivedData.value = String(readBuffer, 0, numBytesRead) + _receivedData.value
                         print(String(readBuffer, 0, numBytesRead))
                     }
-                    delay(1000) // Pequeña pausa para evitar bucle ocupado
+                    delay(250) // Pequeña pausa para evitar bucle ocupado
                 }
             }
         } else {

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Divider
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,6 +41,7 @@ import components.UiComponentFactory
 import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.toByteArray
 import utils.serial_port.SerialPortImpl
+import utils.serial_port.SystemComPort
 
 @Composable
 fun UsbPanel(onRouteChange: (String) -> Unit) {
@@ -90,200 +93,285 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                 .padding(4.dp)
                                 .fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Column(
-                                    Modifier
-                                        .width(120.dp)
-                                        .align(Alignment.CenterVertically)
-                                ) {
-                                    Text(
-                                        text = port.name,
-                                        modifier = Modifier
-                                            .padding(2.dp),
-                                        textAlign = TextAlign.Center,
-                                        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-                                        color = Color.Green
-                                    )
+                            UsbAvailablePortItem(
+                                port,
+                                onClickOpen = {
+                                SerialPortImpl.open(port.name, 115200)
+                                updatePorts = true
+                                },
+                                onClickClose = {
+                                    SerialPortImpl.close()
+                                    updatePorts = true
                                 }
-                                Spacer(modifier = Modifier.weight(1f))
-                                Column(
-                                    horizontalAlignment = Alignment.End,
-                                    modifier = Modifier.align(Alignment.CenterVertically)
-                                ) {
-                                    if (!port.isOpen) {
-                                        Button(
-                                            onClick = {
-                                                SerialPortImpl.open(port.name, 115200)
-                                                updatePorts = true
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color.DarkGray,
-                                                contentColor = Color.White
-                                            ),
-                                            modifier = Modifier
-                                                .width(110.dp)
-                                                .height(36.dp) // Ajusta el tamaño aquí
-                                        ) {
-                                            Text("Connect")
-                                        }
-                                    } else {
-                                        Button(
-                                            onClick = {
-                                                SerialPortImpl.close()
-                                                updatePorts = true
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color.DarkGray,
-                                                contentColor = Color.White
-                                            ),
-                                            modifier = Modifier
-                                                .width(110.dp)
-                                                .height(36.dp) // Ajusta el tamaño aquí
-                                        ) {
-                                            Text("Close")
-                                        }
-                                    }
-                                }
-                            }
+                            )
                             if( port.isOpen ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color.Black),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .padding(5.dp)
-                                            .fillMaxWidth()
-                                            .align(Alignment.CenterVertically)
-                                            .background(Color.Black)
-                                    ) {
-                                        OutlinedTextField(
-                                            modifier = Modifier.fillMaxWidth().padding(5.dp).width(380.dp),
-                                            value = sendText,
-                                            onValueChange = { newValue -> sendText = newValue },
-                                            singleLine = true,
-                                            label = { Text("Command") },
-                                            placeholder = { Text("Your command here...") },
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedLabelColor = Color.Cyan,
-                                                unfocusedLabelColor = Color.White,
-                                                focusedBorderColor = Color.Cyan,
-                                                focusedTextColor = Color.White,
-                                                unfocusedTextColor = Color.White,
-                                                unfocusedBorderColor = Color.White,
-                                                cursorColor = Color.Cyan
-                                            )
-                                        )
-                                    }
+                                UsbDetail(
+                                    sendText = sendText,
+                                    onTextChange = { newValue -> sendText = newValue },
+                                    receivedData = receivedData)
                                 }
-                                Spacer(modifier = Modifier.weight(1f))
-                                Row(Modifier.fillMaxWidth()){
-                                    Column(
-                                        horizontalAlignment = Alignment.End,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.CenterVertically)
-                                            .background(Color.Black)
-                                            .padding(5.dp)
-                                    ) {
-                                        Button(
-                                            onClick = {
-                                                SerialPortImpl.write(
-                                                    sendText.text.toByteArray(
-                                                        Charsets.UTF_8
-                                                    )
-                                                )
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF33FF66),
-                                                contentColor = Color.White
-                                            ),
-                                            modifier = Modifier
-                                                .width(110.dp)
-                                                .background(Color.Black)
-                                                .height(36.dp) // Ajusta el tamaño aquí
-                                        ) {
-                                            Text("Send")
-                                        }
-                                    }
-                                }
-                                Divider( color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp) )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().background(Color.Black)
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth()
-                                    ) {
-                                        receivedData.split("\n").forEach { receivedDataSplitted ->
-                                            val isInfo = receivedDataSplitted.contains("SYNAPPSE.INFO")
-                                                    && !receivedDataSplitted.contains("[0.0.0.0][null]")
-
-                                            val isStatus = receivedDataSplitted.contains("SYNAPPSE.STATUS")
-
-                                            val isMemory = receivedDataSplitted.contains("SYNAPPSE.MEMORY")
-
-                                            val isMqtt = receivedDataSplitted.contains("SYNAPPSE.MQTT")
-                                                    && !receivedDataSplitted.contains("ERROR]")
-                                                    && !receivedDataSplitted.contains("WARNING]")
-                                                    && !receivedDataSplitted.contains("WAIT]")
-                                            val isSerialInput = receivedDataSplitted.contains("SYNAPPSE.SERIAL")
-                                                    && !receivedDataSplitted.contains("ERROR]")
-                                                    && !receivedDataSplitted.contains("WARNING]")
-                                                    && !receivedDataSplitted.contains("WAIT]")
-                                            val isOffline =  receivedDataSplitted.contains("SYNAPPSE.AP")
-                                                    || receivedDataSplitted.contains("SYNAPPSE.NETWORK.INFO")
-                                                    || receivedDataSplitted.contains("[0.0.0.0][null]")
-                                            val isWarning = receivedDataSplitted.contains("WARNING]")
-                                                    || receivedDataSplitted.contains("WAIT]")
-                                            val isError = receivedDataSplitted.contains("ERROR]")
-
-                                            var color: Color = Color.White
-
-                                            if (isInfo){
-                                                color = Color.Cyan
-                                            }else if (isStatus){
-                                                color = Color.Magenta
-                                            }else if (isMemory){
-                                                color = Color.Yellow
-                                            }else if (isMqtt){
-                                                color = Color.Green
-                                            }else if (isSerialInput){
-                                                color = Color.LightGray
-                                            }else if (isOffline){
-                                                color = Color.Black
-                                            }else if (isWarning){
-                                                color = Color(0xFFFF6600)
-                                            }else if (isError){
-                                                color = Color.Red
-                                            }
-
-                                            Text(
-                                                modifier = Modifier.padding(4.dp),
-                                                text = receivedDataSplitted,
-                                                    style = TextStyle(
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    fontSize = 14.sp
-                                                ),
-                                                color = color
-                                            )
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
                 } else {
                     UiComponentFactory().createFilledCard("No USB device connection detected.")
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+fun UsbAvailablePortItem(port: SystemComPort, onClickOpen: () -> Unit, onClickClose: () -> Unit){
+    Row(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+    ) {
+        Column(
+            Modifier
+                .width(120.dp)
+                .align(Alignment.CenterVertically)
+        ) {
+            Text(
+                text = port.name,
+                modifier = Modifier
+                    .padding(2.dp),
+                textAlign = TextAlign.Center,
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                color = Color.Green
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.align(Alignment.CenterVertically)
+        ) {
+            if (!port.isOpen) {
+                Button(
+                    onClick = onClickOpen,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.DarkGray,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .width(110.dp)
+                        .height(36.dp)
+                ) {
+                    Text("Connect")
+                }
+            } else {
+                Button(
+                    onClick = onClickClose,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.DarkGray,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .width(110.dp)
+                        .height(36.dp)
+                ) {
+                    Text("Close")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun UsbDetail(sendText: TextFieldValue, onTextChange: (TextFieldValue) -> Unit, receivedData: String){
+    UsbTerminalInput(sendText, onTextChange)
+    UsbOptionsButtons(sendText)
+    Divider( color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp) )
+    Row(
+        modifier = Modifier.fillMaxWidth().background(Color.Black)
+    ) {
+        val dataLines = receivedData.split("\n")
+        TerminalConsole(dataLines)
+    }
+}
+
+@Composable
+fun UsbTerminalInput(
+    sendText: TextFieldValue,
+    onTextChange: (TextFieldValue) -> Unit){
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Black),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(5.dp)
+                .fillMaxWidth()
+                .align(Alignment.CenterVertically)
+                .background(Color.Black)
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().padding(5.dp).width(380.dp),
+                value = sendText,
+                onValueChange = onTextChange,
+                singleLine = true,
+                label = { Text("Command") },
+                placeholder = { Text("Your command here...") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedLabelColor = Color.Cyan,
+                    unfocusedLabelColor = Color.White,
+                    focusedBorderColor = Color.Cyan,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = Color.White,
+                    cursorColor = Color.Cyan
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun UsbOptionsButtons(sendText: TextFieldValue) {
+    var showOptions by remember { mutableStateOf(false) }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Column(
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .background(Color.Black)
+                .padding(5.dp)
+        ) {
+            Button(
+                onClick = {
+                    SerialPortImpl.write(
+                        sendText.text.toByteArray(
+                            Charsets.UTF_8
+                        )
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00FF66),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .width(110.dp)
+                    .background(Color.Black)
+                    .height(36.dp) // Ajusta el tamaño aquí
+            ) {
+                Text("Commands")
+            }
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .background(Color.Black)
+                .padding(5.dp)
+        ) {
+            Button(
+                onClick = {
+                    SerialPortImpl.write(
+                        sendText.text.toByteArray(
+                            Charsets.UTF_8
+                        )
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF11FF66),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .width(110.dp)
+                    .background(Color.Black)
+                    .height(36.dp) // Ajusta el tamaño aquí
+            ) {
+                Text("Add")
+            }
+        }
+
+
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .background(Color.Black)
+                .padding(5.dp)
+        ) {
+            Button(
+                onClick = {
+                    SerialPortImpl.write(
+                        sendText.text.toByteArray(
+                            Charsets.UTF_8
+                        )
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF33FF66),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .width(110.dp)
+                    .background(Color.Black)
+                    .height(36.dp) // Ajusta el tamaño aquí
+            ) {
+                Text("Send")
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun TerminalConsole(dataLines: List<String>){
+    LazyColumn(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth(),
+        userScrollEnabled = true
+    ) {
+        items(dataLines) { receivedDataSplitted ->
+            val color = when {
+                // info
+                receivedDataSplitted.contains("SYNAPPSE.INFO") && !receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Cyan
+                // status
+                receivedDataSplitted.contains("SYNAPPSE.STATUS") -> Color.Magenta
+                // memory
+                receivedDataSplitted.contains("SYNAPPSE.MEMORY") && !receivedDataSplitted.contains("ERROR]")
+                        && !receivedDataSplitted.contains("WARNING]")
+                        && !receivedDataSplitted.contains("WAIT]") -> Color.Yellow
+                // mqtt
+                receivedDataSplitted.contains("SYNAPPSE.MQTT")
+                        && !receivedDataSplitted.contains("ERROR]")
+                        && !receivedDataSplitted.contains("WARNING]")
+                        && !receivedDataSplitted.contains("WAIT]") -> Color.Green
+                // serial
+                receivedDataSplitted.contains("SYNAPPSE.SERIAL") -> Color.LightGray
+                // offline
+                receivedDataSplitted.contains("SYNAPPSE.AP") ||
+                        receivedDataSplitted.contains("SYNAPPSE.NETWORK.INFO") ||
+                        receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Black
+                // warning
+                receivedDataSplitted.contains("WARNING]")
+                        || receivedDataSplitted.contains("WAIT]") -> Color(0xFFFF6600)
+                // error
+                receivedDataSplitted.contains("ERROR]") -> Color.Red
+                // default
+                else -> Color.White
+            }
+
+            Text(
+                modifier = Modifier.padding(4.dp),
+                text = receivedDataSplitted,
+                style = TextStyle(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                ),
+                color = color
+            )
         }
     }
 }
