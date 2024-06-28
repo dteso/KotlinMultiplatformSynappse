@@ -57,10 +57,11 @@ actual object SerialPortImpl : SerialPortInterface {
 
         if (port.isOpen) {
             job = CoroutineScope(Dispatchers.IO).launch {
-                val readBuffer = ByteArray(1024)
+                val readBuffer = ByteArray(512)
                 systemCommPorts[0].isOpen = true
                 while (isActive) {
                     val numBytesRead = port.readBytes(readBuffer, readBuffer.size.toLong())
+//                    println("PACKAGE SIZE ${numBytesRead}")
                     if (numBytesRead > 0) {
                         _receivedData.value = String(readBuffer, 0, numBytesRead) + _receivedData.value
                         print(String(readBuffer, 0, numBytesRead))
