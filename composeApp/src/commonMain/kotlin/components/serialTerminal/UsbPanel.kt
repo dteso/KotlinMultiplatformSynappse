@@ -13,11 +13,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Divider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.sharp.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -105,11 +111,13 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                 }
                             )
                             if( port.isOpen ) {
-                                UsbDetail(
+                                UsbTerminal(
                                     sendText = sendText,
                                     onTextChange = { newValue -> sendText = newValue },
-                                    receivedData = receivedData)
-                                }
+                                    receivedData = receivedData,
+                                    onRouteChange
+                                )
+                            }
                         }
                     }
                 } else {
@@ -179,14 +187,14 @@ fun UsbAvailablePortItem(port: SystemComPort, onClickOpen: () -> Unit, onClickCl
 }
 
 @Composable
-fun UsbDetail(sendText: TextFieldValue, onTextChange: (TextFieldValue) -> Unit, receivedData: String){
+fun UsbTerminal(sendText: TextFieldValue, onTextChange: (TextFieldValue) -> Unit, receivedData: String, onRouteChange: (String) -> Unit){
     UsbTerminalInput(sendText, onTextChange)
-    UsbOptionsButtons(sendText)
+    UsbOptionsButtons(sendText, onRouteChange)
     Divider( color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp) )
     Row(
         modifier = Modifier.fillMaxWidth().background(Color.Black)
     ) {
-        val dataLines = receivedData.split("\n")
+        val dataLines = receivedData.split("\n").asReversed()
         TerminalConsole(dataLines)
     }
 }
@@ -230,67 +238,48 @@ fun UsbTerminalInput(
 }
 
 @Composable
-fun UsbOptionsButtons(sendText: TextFieldValue) {
+fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit) {
     var showOptions by remember { mutableStateOf(false) }
     Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        Modifier.fillMaxWidth()
     ) {
-        Column(
-            horizontalAlignment = Alignment.Start,
+        Row(
+            horizontalArrangement = Arrangement.Start,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .background(Color.Black)
                 .padding(5.dp)
         ) {
-            Button(
-                onClick = {
+
+            IconButton(onClick = {
                     SerialPortImpl.write(
                         sendText.text.toByteArray(
                             Charsets.UTF_8
                         )
                     )
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00FF66),
-                    contentColor = Color.White
-                ),
-                modifier = Modifier
-                    .width(110.dp)
-                    .background(Color.Black)
-                    .height(36.dp) // Ajusta el tamaño aquí
-            ) {
-                Text("Commands")
+            }) {
+                Icon(
+                    imageVector = Icons.Sharp.Star,
+                    contentDescription = "Commands"
+                )
+            }
+
+            IconButton(onClick = {
+                    SerialPortImpl.write(
+                        sendText.text.toByteArray(
+                            Charsets.UTF_8
+                        )
+                    )
+                    onRouteChange("add-device")
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = "Add"
+                )
             }
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .background(Color.Black)
-                .padding(5.dp)
-        ) {
-            Button(
-                onClick = {
-                    SerialPortImpl.write(
-                        sendText.text.toByteArray(
-                            Charsets.UTF_8
-                        )
-                    )
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF11FF66),
-                    contentColor = Color.White
-                ),
-                modifier = Modifier
-                    .width(110.dp)
-                    .background(Color.Black)
-                    .height(36.dp) // Ajusta el tamaño aquí
-            ) {
-                Text("Add")
-            }
-        }
+        Spacer(modifier = Modifier.weight(1f))
 
 
         Column(
@@ -310,14 +299,17 @@ fun UsbOptionsButtons(sendText: TextFieldValue) {
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF33FF66),
-                    contentColor = Color.White
+                    contentColor = Color(0xFF223240)
                 ),
                 modifier = Modifier
-                    .width(110.dp)
+                    .width(80.dp)
                     .background(Color.Black)
                     .height(36.dp) // Ajusta el tamaño aquí
             ) {
-                Text("Send")
+                Icon(
+                    imageVector = Icons.Filled.Send,
+                    contentDescription = "Send"
+                )
             }
         }
     }
@@ -336,11 +328,13 @@ fun TerminalConsole(dataLines: List<String>){
         items(dataLines) { receivedDataSplitted ->
             val color = when {
                 // info
-                receivedDataSplitted.contains("SYNAPPSE.INFO") && !receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Cyan
+                receivedDataSplitted.contains("SYNAPPSE.INFO")
+                        && !receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Cyan
                 // status
                 receivedDataSplitted.contains("SYNAPPSE.STATUS") -> Color.Magenta
                 // memory
-                receivedDataSplitted.contains("SYNAPPSE.MEMORY") && !receivedDataSplitted.contains("ERROR]")
+                receivedDataSplitted.contains("SYNAPPSE.MEMORY")
+                        && !receivedDataSplitted.contains("ERROR]")
                         && !receivedDataSplitted.contains("WARNING]")
                         && !receivedDataSplitted.contains("WAIT]") -> Color.Yellow
                 // mqtt
@@ -351,9 +345,9 @@ fun TerminalConsole(dataLines: List<String>){
                 // serial
                 receivedDataSplitted.contains("SYNAPPSE.SERIAL") -> Color.LightGray
                 // offline
-                receivedDataSplitted.contains("SYNAPPSE.AP") ||
-                        receivedDataSplitted.contains("SYNAPPSE.NETWORK.INFO") ||
-                        receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Black
+                receivedDataSplitted.contains("SYNAPPSE.AP")
+                        || receivedDataSplitted.contains("SYNAPPSE.NETWORK.INFO")
+                        || receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Black
                 // warning
                 receivedDataSplitted.contains("WARNING]")
                         || receivedDataSplitted.contains("WAIT]") -> Color(0xFFFF6600)

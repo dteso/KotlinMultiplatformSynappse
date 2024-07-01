@@ -62,6 +62,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json) // Reemplaza con la versión más reciente
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.okhttp)
+            implementation ("com.google.code.gson:gson:2.8.8")
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

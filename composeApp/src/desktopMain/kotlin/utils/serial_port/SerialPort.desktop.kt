@@ -1,9 +1,12 @@
 package utils.serial_port
+import Event
+import androidx.compose.ui.text.input.TextFieldValue
 import com.fazecast.jSerialComm.SerialPort
 import com.fazecast.jSerialComm.SerialPortIOException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.json.Json
 
 actual object SerialPortImpl : SerialPortInterface {
 
@@ -57,16 +60,28 @@ actual object SerialPortImpl : SerialPortInterface {
 
         if (port.isOpen) {
             job = CoroutineScope(Dispatchers.IO).launch {
-                val readBuffer = ByteArray(512)
+                val readBuffer = ByteArray(1024)
                 systemCommPorts[0].isOpen = true
+
+                var buffer: MutableList<String> = mutableListOf()
                 while (isActive) {
                     val numBytesRead = port.readBytes(readBuffer, readBuffer.size.toLong())
 //                    println("PACKAGE SIZE ${numBytesRead}")
                     if (numBytesRead > 0) {
-                        _receivedData.value = String(readBuffer, 0, numBytesRead) + _receivedData.value
-                        print(String(readBuffer, 0, numBytesRead))
+                        var readString = String(readBuffer, 0, numBytesRead)
+                        buffer.add(readString)
+                        print(readString)
                     }
-                    delay(250) // Pequeña pausa para evitar bucle ocupado
+
+//                    if(buffer.size > 1){
+//                        print("SUPERADO NUMERO DE ELEMENTOS CON " + buffer.size + " ELEMENTOS")
+//                    }
+
+                    for(i in buffer){
+                        _receivedData.value += i
+                        delay(50)
+                    }
+                    buffer.clear()
                 }
             }
         } else {
