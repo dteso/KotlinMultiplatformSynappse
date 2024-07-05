@@ -2,33 +2,33 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Event(
-    val event: String,
-    val config: Config,
-    val status: Status
+    val event: String?,
+    var config: Config?,
+    val status: Status?
 )
 
 @Serializable
 data class Config(
-    val rssi: String,
-    val ip: String,
-    val appKey: String,
-    val ssid: String,
-    val staPass:String,
-    val name: String,
-    val deviceType: String,
-    val MAC: String,
-    val ports: List<Port>,
-    val mqttServer: String,
-    val mqttPort: Int,
-    val mqttUser: String,
-    val mqttPassword: String
+    var rssi: String,
+    var ip: String,
+    var appKey: String,
+    var staSsid: String,
+    var staPass:String,
+    var name: String,
+    var deviceType: String,
+    var MAC: String,
+    var ports: List<Port>? = null, // De esta forma es nullable o puede no venir en la definición del json
+    var mqttServer: String,
+    var mqttPort: Int,
+    var mqttUser: String,
+    var mqttPassword: String
 )
 
 @Serializable
 data class Port(
-    val pin: String,
+    val pin: Int,
     val mode: String,
-    val type: String,
+    val type: Int,
     val alias: String,
     val value: String
 )
@@ -36,5 +36,5 @@ data class Port(
 @Serializable
 data class Status(
     val timeAlive: String,
-    val temperature: String
+//    val temperature: String?
 )

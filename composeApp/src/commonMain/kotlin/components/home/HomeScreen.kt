@@ -47,7 +47,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import components.dashboard.Dashboard
-import components.devices.AddDevice
+import components.devices.UsbDeviceSetup
 import components.login.LoginFormScreen
 import components.serialTerminal.UsbPanel
 import kotlinx.coroutines.CoroutineScope
@@ -151,7 +151,7 @@ class HomeScreen : Screen {
                             }
 
                             "add-device" -> {
-                                AddDevice () { route -> innerRoute = route }
+                                UsbDeviceSetup () { route -> innerRoute = route }
                             }
 
                             "systems" -> {

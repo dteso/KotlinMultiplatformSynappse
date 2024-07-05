@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Divider
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.sharp.Star
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.sharp.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,6 +42,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import components.UiComponentFactory
+import components.devices.UsbDeviceSetup
+import components.serialTerminal.components.UsbTerminal
 import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.toByteArray
 import utils.serial_port.SerialPortImpl
@@ -55,6 +55,7 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
     val receivedData by SerialPortImpl.receivedData.collectAsState()
     var updatePorts by remember { mutableStateOf(false) }
     var sendText by remember { mutableStateOf(TextFieldValue("")) }
+    var isTerminal by remember { mutableStateOf(true) }
 
     if (updatePorts) {
         ports = SerialPortImpl.getAvailablePorts()
@@ -111,12 +112,14 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                 }
                             )
                             if( port.isOpen ) {
-                                UsbTerminal(
-                                    sendText = sendText,
-                                    onTextChange = { newValue -> sendText = newValue },
-                                    receivedData = receivedData,
-                                    onRouteChange
-                                )
+                                UsbTerminalInput(sendText, onTextChange = { newValue -> sendText = newValue },)
+                                UsbOptionsButtons(sendText, onRouteChange, onChangeTerminalState = { isTerminal = it })
+                                if(isTerminal){
+                                    UsbTerminal(receivedData)
+                                }else{
+                                    UsbDeviceSetup(onRouteChange)
+                                }
+
                             }
                         }
                     }
@@ -187,58 +190,7 @@ fun UsbAvailablePortItem(port: SystemComPort, onClickOpen: () -> Unit, onClickCl
 }
 
 @Composable
-fun UsbTerminal(sendText: TextFieldValue, onTextChange: (TextFieldValue) -> Unit, receivedData: String, onRouteChange: (String) -> Unit){
-    UsbTerminalInput(sendText, onTextChange)
-    UsbOptionsButtons(sendText, onRouteChange)
-    Divider( color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp) )
-    Row(
-        modifier = Modifier.fillMaxWidth().background(Color.Black)
-    ) {
-        val dataLines = receivedData.split("\n").asReversed()
-        TerminalConsole(dataLines)
-    }
-}
-
-@Composable
-fun UsbTerminalInput(
-    sendText: TextFieldValue,
-    onTextChange: (TextFieldValue) -> Unit){
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Black),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(5.dp)
-                .fillMaxWidth()
-                .align(Alignment.CenterVertically)
-                .background(Color.Black)
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().padding(5.dp).width(380.dp),
-                value = sendText,
-                onValueChange = onTextChange,
-                singleLine = true,
-                label = { Text("Command") },
-                placeholder = { Text("Your command here...") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.Cyan,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color.Cyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    cursorColor = Color.Cyan
-                )
-            )
-        }
-    }
-}
-
-@Composable
-fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit) {
+fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit, onChangeTerminalState: (Boolean) -> Unit) {
     var showOptions by remember { mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth()
@@ -252,29 +204,32 @@ fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit)
         ) {
 
             IconButton(onClick = {
-                    SerialPortImpl.write(
-                        sendText.text.toByteArray(
-                            Charsets.UTF_8
-                        )
+                onChangeTerminalState(true)
+                val readStatusCmd: String = "---read_status"
+                SerialPortImpl.write(
+                    readStatusCmd.toByteArray(
+                        Charsets.UTF_8
                     )
+                )
             }) {
                 Icon(
-                    imageVector = Icons.Sharp.Star,
-                    contentDescription = "Commands"
+                    imageVector = Icons.Sharp.List,
+                    contentDescription = "Terminal"
                 )
             }
 
             IconButton(onClick = {
-                    SerialPortImpl.write(
-                        sendText.text.toByteArray(
-                            Charsets.UTF_8
-                        )
+                onChangeTerminalState(false)
+                val readStatusCmd: String = "---read_status"
+                SerialPortImpl.write(
+                    readStatusCmd.toByteArray(
+                        Charsets.UTF_8
                     )
-                    onRouteChange("add-device")
+                )
             }) {
                 Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add"
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = "Config"
                 )
             }
         }
@@ -315,57 +270,46 @@ fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit)
     }
 }
 
-
-
 @Composable
-fun TerminalConsole(dataLines: List<String>){
-    LazyColumn(
+fun UsbTerminalInput(
+    sendText: TextFieldValue,
+    onTextChange: (TextFieldValue) -> Unit){
+    Row(
         modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth(),
-        userScrollEnabled = true
+            .fillMaxWidth()
+            .background(Color.Black),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        items(dataLines) { receivedDataSplitted ->
-            val color = when {
-                // info
-                receivedDataSplitted.contains("SYNAPPSE.INFO")
-                        && !receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Cyan
-                // status
-                receivedDataSplitted.contains("SYNAPPSE.STATUS") -> Color.Magenta
-                // memory
-                receivedDataSplitted.contains("SYNAPPSE.MEMORY")
-                        && !receivedDataSplitted.contains("ERROR]")
-                        && !receivedDataSplitted.contains("WARNING]")
-                        && !receivedDataSplitted.contains("WAIT]") -> Color.Yellow
-                // mqtt
-                receivedDataSplitted.contains("SYNAPPSE.MQTT")
-                        && !receivedDataSplitted.contains("ERROR]")
-                        && !receivedDataSplitted.contains("WARNING]")
-                        && !receivedDataSplitted.contains("WAIT]") -> Color.Green
-                // serial
-                receivedDataSplitted.contains("SYNAPPSE.SERIAL") -> Color.LightGray
-                // offline
-                receivedDataSplitted.contains("SYNAPPSE.AP")
-                        || receivedDataSplitted.contains("SYNAPPSE.NETWORK.INFO")
-                        || receivedDataSplitted.contains("[0.0.0.0][null]") -> Color.Black
-                // warning
-                receivedDataSplitted.contains("WARNING]")
-                        || receivedDataSplitted.contains("WAIT]") -> Color(0xFFFF6600)
-                // error
-                receivedDataSplitted.contains("ERROR]") -> Color.Red
-                // default
-                else -> Color.White
-            }
-
-            Text(
-                modifier = Modifier.padding(4.dp),
-                text = receivedDataSplitted,
-                style = TextStyle(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
+        Column(
+            modifier = Modifier
+                .padding(5.dp)
+                .fillMaxWidth()
+                .align(Alignment.CenterVertically)
+                .background(Color.Black)
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().padding(5.dp).width(380.dp),
+                value = sendText,
+                onValueChange = onTextChange,
+                singleLine = true,
+                label = { Text("Command") },
+                placeholder = { Text("Your command here...") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedLabelColor = Color.Cyan,
+                    unfocusedLabelColor = Color.White,
+                    focusedBorderColor = Color.Cyan,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = Color.White,
+                    cursorColor = Color.Cyan,
+                    selectionColors = TextSelectionColors(
+                        handleColor = Color.Black,
+                        backgroundColor = Color(0x5500DDFF),
+                    )
                 ),
-                color = color
             )
         }
     }
 }
+
+
