@@ -78,6 +78,9 @@ fun NewDeviceForm(
     var mqttUser by remember { mutableStateOf("") }
     var mqttPassword by remember { mutableStateOf("") }
     var mqttEnabled by remember { mutableStateOf(false) }
+    var mqttConnected by remember { mutableStateOf(false) }
+    var wifiEnabled by remember { mutableStateOf(false) }
+    var wifiConnected by remember { mutableStateOf(false) }
 
     var ports by remember { mutableStateOf<MutableList<Port>>(mutableListOf()) }
 
@@ -118,6 +121,9 @@ fun NewDeviceForm(
             mqttUser = newEvent.config!!.mqttUser
             mqttPassword = newEvent.config!!.mqttPassword
             mqttEnabled = newEvent.config!!.mqttEnabled
+            mqttConnected = newEvent.config!!.mqttConnected
+            wifiConnected = newEvent.config!!.wifiConnected
+            wifiEnabled = newEvent.config!!.staEnabled
             ports = newEvent.config!!.ports?.toMutableList() ?: mutableListOf()
             event = newEvent
             println("STATUS UPDATE SUCCESS!!!" + event)
@@ -168,7 +174,7 @@ fun NewDeviceForm(
             userScrollEnabled = true,
             horizontalAlignment = Alignment.Start
         ) {
-            val textModifier: Modifier = Modifier.padding(horizontal = 5.dp)
+            val textModifier: Modifier = Modifier.padding(horizontal = 5.dp).width(200.dp)
 
             item {
                 UiComponentFactory().Label(
@@ -239,13 +245,54 @@ fun NewDeviceForm(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                UiComponentFactory().Label(
-                    "Wifi Configuration",
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Left,
-                    textModifier
-                )
+                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                    UiComponentFactory().Label(
+                        "WiFi Enabled",
+                        color = Color(0xFFFFFFFF),
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Left,
+                        textModifier
+                    )
+
+                    Switch(
+                        checked = wifiEnabled,
+                        onCheckedChange = {
+                            wifiEnabled = it
+                            event = event.copy(config = event.config!!.copy(staEnabled = it))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Green,
+                            checkedTrackColor = Color.DarkGray,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.LightGray,
+                        )
+                    )
+                }
+
+                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                    UiComponentFactory().Label(
+                        "Online",
+                        color = Color(0xFFFFFFFF),
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Left,
+                        textModifier
+                    )
+
+                    Switch(
+                        checked = wifiConnected,
+                        enabled = false,
+                        onCheckedChange = {
+                            wifiConnected = it
+                            event = event.copy(config = event.config!!.copy(wifiConnected = it))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Green,
+                            checkedTrackColor = Color.DarkGray,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.LightGray,
+                        )
+                    )
+                }
 
                 OutlinedTextField(
                     modifier = Modifier.padding(3.dp),
@@ -349,7 +396,32 @@ fun NewDeviceForm(
                             event = event.copy(config = event.config!!.copy(mqttEnabled = it))
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.Green,
+                            checkedThumbColor = Color(0xFFFF00FF),
+                            checkedTrackColor = Color.DarkGray,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.LightGray,
+                        )
+                    )
+                }
+
+                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                    UiComponentFactory().Label(
+                        "MQTT Online",
+                        color = Color(0xFFFFFFFF),
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Left,
+                        textModifier
+                    )
+
+                    Switch(
+                        checked = mqttConnected,
+                        enabled = false,
+                        onCheckedChange = {
+                            mqttConnected = it
+                            event = event.copy(config = event.config!!.copy(mqttConnected = it))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFFFF00FF),
                             checkedTrackColor = Color.DarkGray,
                             uncheckedThumbColor = Color.White,
                             uncheckedTrackColor = Color.LightGray,
