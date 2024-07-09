@@ -21,7 +21,12 @@ data class Config(
     var mqttServer: String,
     var mqttPort: Int,
     var mqttUser: String,
-    var mqttPassword: String
+    var mqttPassword: String,
+    var mqttEnabled: Boolean,
+    var staEnabled: Boolean,
+    var wifiConnected: Boolean,
+    var mqttConnected: Boolean
+
 )
 
 @Serializable

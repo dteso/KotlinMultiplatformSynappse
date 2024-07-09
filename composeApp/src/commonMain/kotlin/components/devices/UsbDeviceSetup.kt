@@ -43,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,29 +50,22 @@ import androidx.compose.ui.window.Dialog
 import components.UiComponentFactory
 import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.toByteArray
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import utils.serial_port.SerialPortImpl
 
 @Composable
-fun UsbDeviceSetup(onRouteChange: (String) -> Unit) {
+fun UsbDeviceSetup() {
     val receivedData by SerialPortImpl.receivedData.collectAsState()
-    var sendText by remember { mutableStateOf(TextFieldValue("")) }
 
     NewDeviceForm(
-        sendText = sendText,
-        onTextChange = { newValue -> sendText = newValue },
         receivedData = receivedData,
-        onRouteChange = onRouteChange
     )
 }
 
 @Composable
 fun NewDeviceForm(
-    sendText: TextFieldValue,
-    onTextChange: (TextFieldValue) -> Unit,
     receivedData: String,
-    onRouteChange: (String) -> Unit
 ) {
     var deviceName by remember { mutableStateOf("") }
     var wifiSsid by remember { mutableStateOf("") }
@@ -85,41 +77,83 @@ fun NewDeviceForm(
     var mqttPort by remember { mutableStateOf(0) }
     var mqttUser by remember { mutableStateOf("") }
     var mqttPassword by remember { mutableStateOf("") }
+    var mqttEnabled by remember { mutableStateOf(false) }
+
     var ports by remember { mutableStateOf<MutableList<Port>>(mutableListOf()) }
+
     var event by remember { mutableStateOf(Event(null, null, null)) }
+
+    var onProcessingModalOpen by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(false) }
 
     val dataLines = receivedData.split("\n").asReversed()
     var isInitialized by remember { mutableStateOf(false) }
 
-    for (line in dataLines) {
-        if (!isInitialized) {
-            if (line.startsWith("[SYNAPPSE.STATUS]:")) {
-                val statusJson = line.removePrefix("[SYNAPPSE.STATUS]:").trim()
-                try {
-                    val json = Json {
-                        ignoreUnknownKeys = true
-                    }
-                    val newEvent = json.decodeFromString<Event>(statusJson)
-                    deviceName = newEvent.config!!.name
-                    wifiSsid = newEvent.config!!.staSsid
-                    wifiPassword = newEvent.config!!.staPass
-                    mac = newEvent.config!!.MAC
-                    ip = newEvent.config!!.ip
-                    timeAlive = newEvent.status!!.timeAlive
-                    mqttServer = newEvent.config!!.mqttServer
-                    mqttPort = newEvent.config!!.mqttPort
-                    mqttUser = newEvent.config!!.mqttUser
-                    mqttPassword = newEvent.config!!.mqttPassword
-                    ports = newEvent.config!!.ports?.toMutableList() ?: mutableListOf()
-                    event = newEvent
-                    isInitialized = true
-                } catch (e: Exception) {
-                    println("Failed to decode JSON: ${e.message}")
-                }
-                break
+    var statusReceivedIndex = dataLines.indexOfFirst { it.startsWith("[SYNAPPSE.STATUS]:") }
+    var confirmedBootIndex = dataLines.indexOfFirst { it.startsWith("[SYNAPPSE.START]") }
+
+    var updateFormStatus = statusReceivedIndex in 0..2 && dataLines[statusReceivedIndex].startsWith("[SYNAPPSE.STATUS]:") && !editing;
+    var bootConfirmationReceived = confirmedBootIndex in 0..4 && dataLines[confirmedBootIndex].startsWith("[SYNAPPSE.START]");
+
+    if (bootConfirmationReceived){
+        isInitialized = true
+        editing = false
+    }
+
+    if (updateFormStatus) {
+        val statusJson = dataLines[statusReceivedIndex].removePrefix("[SYNAPPSE.STATUS]:").trim()
+        try {
+            val json = Json {
+                ignoreUnknownKeys = true
             }
+            val newEvent = json.decodeFromString<Event>(statusJson)
+            deviceName = newEvent.config!!.name
+            wifiSsid = newEvent.config!!.staSsid
+            wifiPassword = newEvent.config!!.staPass
+            mac = newEvent.config!!.MAC
+            ip = newEvent.config!!.ip
+            timeAlive = newEvent.status!!.timeAlive
+            mqttServer = newEvent.config!!.mqttServer
+            mqttPort = newEvent.config!!.mqttPort
+            mqttUser = newEvent.config!!.mqttUser
+            mqttPassword = newEvent.config!!.mqttPassword
+            mqttEnabled = newEvent.config!!.mqttEnabled
+            ports = newEvent.config!!.ports?.toMutableList() ?: mutableListOf()
+            event = newEvent
+            println("STATUS UPDATE SUCCESS!!!" + event)
+        } catch (e: Exception) {
+            println("Failed to decode JSON: ${e.message}")
         }
     }
+//    for (line in dataLines) {
+//        if (!isInitialized) {
+//            if (line.startsWith("[SYNAPPSE.STATUS]:")) {
+//                val statusJson = line.removePrefix("[SYNAPPSE.STATUS]:").trim()
+//                try {
+//                    val json = Json {
+//                        ignoreUnknownKeys = true
+//                    }
+//                    val newEvent = json.decodeFromString<Event>(statusJson)
+//                    deviceName = newEvent.config!!.name
+//                    wifiSsid = newEvent.config!!.staSsid
+//                    wifiPassword = newEvent.config!!.staPass
+//                    mac = newEvent.config!!.MAC
+//                    ip = newEvent.config!!.ip
+//                    timeAlive = newEvent.status!!.timeAlive
+//                    mqttServer = newEvent.config!!.mqttServer
+//                    mqttPort = newEvent.config!!.mqttPort
+//                    mqttUser = newEvent.config!!.mqttUser
+//                    mqttPassword = newEvent.config!!.mqttPassword
+//                    ports = newEvent.config!!.ports?.toMutableList() ?: mutableListOf()
+//                    event = newEvent
+//                    isInitialized = true
+//                } catch (e: Exception) {
+//                    println("Failed to decode JSON: ${e.message}")
+//                }
+//                break
+//            }
+//        }
+//    }
 
     Divider(color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp))
     Row(
@@ -132,7 +166,7 @@ fun NewDeviceForm(
         LazyColumn(
             Modifier.fillMaxWidth(),
             userScrollEnabled = true,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Start
         ) {
             val textModifier: Modifier = Modifier.padding(horizontal = 5.dp)
 
@@ -150,6 +184,7 @@ fun NewDeviceForm(
                     modifier = Modifier.padding(3.dp),
                     value = deviceName,
                     onValueChange = { newValue ->
+                        editing =  true
                         deviceName = newValue
                         event = event.copy(config = event.config?.copy(name = newValue))
                     },
@@ -173,7 +208,10 @@ fun NewDeviceForm(
                 OutlinedTextField(
                     modifier = Modifier.padding(3.dp),
                     value = mac,
-                    onValueChange = { newValue -> mac = newValue },
+                    onValueChange = {
+                        newValue -> mac = newValue
+                        editing =  true
+                    },
                     label = { Text("MAC") },
                     placeholder = { Text("e.g., Garage") },
                     enabled = false,
@@ -212,7 +250,10 @@ fun NewDeviceForm(
                 OutlinedTextField(
                     modifier = Modifier.padding(3.dp),
                     value = ip,
-                    onValueChange = { newValue -> ip = newValue },
+                    onValueChange = {
+                        newValue -> ip = newValue
+                        editing =  true
+                    },
                     label = { Text("IP") },
                     placeholder = { Text("e.g., Garage") },
                     enabled = false,
@@ -241,6 +282,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         wifiSsid = newValue
                         event = event.copy(config = event.config?.copy(staSsid = newValue))
+                        editing =  true
                     },
                     label = { Text("SSID") },
                     placeholder = { Text("e.g., MiFibra-9B0C") },
@@ -266,6 +308,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         wifiPassword = newValue
                         event = event.copy(config = event.config?.copy(staPass = newValue))
+                        editing =  true
                     },
                     label = { Text("Password") },
                     placeholder = { Text("e.g., xxxxxxxxxxx") },
@@ -290,13 +333,29 @@ fun NewDeviceForm(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                UiComponentFactory().Label(
-                    "MQTT Configuration",
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Left,
-                    textModifier
-                )
+                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                    UiComponentFactory().Label(
+                        "MQTT Enabled",
+                        color = Color(0xFFFFFFFF),
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Left,
+                        textModifier
+                    )
+
+                    Switch(
+                        checked = mqttEnabled,
+                        onCheckedChange = {
+                            mqttEnabled = it
+                            event = event.copy(config = event.config!!.copy(mqttEnabled = it))
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Green,
+                            checkedTrackColor = Color.DarkGray,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color.LightGray,
+                        )
+                    )
+                }
 
                 OutlinedTextField(
                     modifier = Modifier.padding(3.dp),
@@ -304,6 +363,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttServer = newValue
                         event = event.copy(config = event.config?.copy(mqttServer = newValue))
+                        editing =  true
                     },
                     label = { Text("MQTT Broker") },
                     placeholder = { Text("e.g., Garage") },
@@ -328,6 +388,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttPort = newValue.toInt()
                         event = event.copy(config = event.config?.copy(mqttPort = newValue.toInt()))
+                        editing =  true
                     },
                     label = { Text("MQTT Port") },
                     placeholder = { Text("e.g., myuser") },
@@ -352,6 +413,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttUser = newValue
                         event = event.copy(config = event.config?.copy(mqttUser = newValue))
+                        editing =  true
                     },
                     label = { Text("MQTT User") },
                     placeholder = { Text("e.g., mymqttuser") },
@@ -376,6 +438,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttPassword = newValue
                         event = event.copy(config = event.config?.copy(mqttPassword = newValue))
+                        editing =  true
                     },
                     label = { Text("MQTT Password") },
                     placeholder = { Text("e.g., *************") },
@@ -519,9 +582,9 @@ fun NewDeviceForm(
                 }
 
                 var isAdding by remember { mutableStateOf(false) }
-                var portFormValue: Any = {}
 
                 if (isAdding) {
+                    editing =  true
                     PortsFormDialog(
                         onDismissRequest = { isAdding = false },
                         onConfirmation = { port ->
@@ -554,6 +617,7 @@ fun NewDeviceForm(
                     Button(
                         onClick = {
                             var strConfig = Json.encodeToString(event.config)
+                            strConfig = strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
                             val setConfigCommand = "---set_config:${strConfig}"
                             SerialPortImpl.write(
                                 setConfigCommand.toByteArray(
@@ -562,7 +626,8 @@ fun NewDeviceForm(
                             )
                             println(event)
                             isInitialized = false
-                          },
+                            onProcessingModalOpen = true
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF00DDFF),
                             contentColor = Color(0xFF223240)
@@ -571,13 +636,31 @@ fun NewDeviceForm(
                             .width(150.dp)
                             .background(Color.Black)
                             .padding(20.dp)
-                            .height(36.dp) // Ajusta el tamaño aquí
+                            .height(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.PlayArrow,
                             contentDescription = "Set configuration"
                         )
                     }
+                }
+
+                if (onProcessingModalOpen) {
+                    OnProcessingDialog(
+                        onDismissRequest = { onProcessingModalOpen = false },
+                        onConfirmation = {
+                            onProcessingModalOpen = false
+                            isInitialized = false
+                            val readStatusCmd: String = "---read_status"
+                            SerialPortImpl.write(
+                                readStatusCmd.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+                            editing =  false
+                        },
+                        isInitialized = isInitialized
+                    )
                 }
             }
         }
@@ -605,11 +688,11 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
             OutlinedTextField(
                 modifier = Modifier.padding(3.dp).width(100.dp),
                 value = pin.toString(),
-                onValueChange = {
-                    newValue -> pin = newValue
+                onValueChange = { newValue ->
+                    pin = newValue
                     val port = setFormValueAsPort(pin, alias, selectedMode, selectedType)
                     onPortFormChanged(port)
-                                },
+                },
                 label = { Text("Pin") },
                 placeholder = { Text("1") },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -637,7 +720,7 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
                     alias = newValue
                     val port = setFormValueAsPort(pin, alias, selectedMode, selectedType)
                     onPortFormChanged(port)
-                                },
+                },
                 label = { Text("Alias") },
                 placeholder = { Text("ALIAS") },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -693,11 +776,12 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
     }
 }
 
-fun setFormValueAsPort(pin: String, alias: String, mode:String, type:String): Port {
-    var decodedType = if(type == "INPUT") 1 else 0
-    var decodedMode = if(mode == "ANALOG" || mode =="A") "A" else "D"
-    var decodedPin = if(pin == "") 0 else pin.toInt()
-    var port = Port(pin=decodedPin, alias=alias, mode=decodedMode, type=decodedType, value="L")
+fun setFormValueAsPort(pin: String, alias: String, mode: String, type: String): Port {
+    var decodedType = if (type == "INPUT") 1 else 0
+    var decodedMode = if (mode == "ANALOG" || mode == "A") "A" else "D"
+    var decodedPin = if (pin == "") 0 else pin.toInt()
+    var port =
+        Port(pin = decodedPin, alias = alias, mode = decodedMode, type = decodedType, value = "L")
     return port
 }
 
@@ -792,7 +876,7 @@ fun PortsFormDialog(
             ) {
                 /** PORTS FORM ***/
                 FormRow(
-                    onPortFormChanged={
+                    onPortFormChanged = {
                         portFormValue = it
 
                     }
@@ -816,13 +900,94 @@ fun PortsFormDialog(
                         onClick = {
                             onConfirmation(portFormValue)
                             print("PORT OPTIONS: $portFormValue")
-                                  },
+                        },
                         modifier = Modifier.padding(2.dp),
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = Color.Cyan
                         )
                     ) {
                         Text("Confirm")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OnProcessingDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    isInitialized: Boolean
+) {
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(400.dp)
+                .width(290.dp)
+                .padding(16.dp)
+                .background(Color(0xFF223240))
+        ) {
+
+            Column(Modifier.background(Color(0xBB223240)).fillMaxWidth()) {
+                val textModifier: Modifier = Modifier.padding(10.dp)
+                UiComponentFactory().Label(
+                    "Port Configuration",
+                    color = Color(0xFFFFFFFF),
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Left,
+                    textModifier
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize().background(Color(0xFF223240)),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+
+
+                when (isInitialized) {
+                    true -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Text(text = "Configuration completed!", color = Color(0xFF00FF77))
+                        }
+                    }
+
+                    false -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Text(text = "Performing setup action...", color = Color(0xFFFF7700))
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    if(isInitialized){
+                        TextButton(
+                            onClick = {
+                                onConfirmation()
+                            },
+                            modifier = Modifier.padding(2.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = Color.Cyan
+                            )
+                        ) {
+                            Text("Confirm")
+                        }
                     }
                 }
             }

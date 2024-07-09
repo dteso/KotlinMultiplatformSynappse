@@ -14,7 +14,6 @@ actual object SerialPortImpl : SerialPortInterface {
     private var currentPort: SerialPort? = null
     private var job: Job? = null
     private var storedPorts: MutableList<SerialPort> = mutableListOf()
-
     // Variable pública accesible para almacenar los datos leídos
     // MutableStateFlow para almacenar los datos leídos
     private val _receivedData = MutableStateFlow("")
@@ -34,7 +33,6 @@ actual object SerialPortImpl : SerialPortInterface {
             return null
         } else if (systemCommPorts.isEmpty()){
             systemCommPorts.clear()
-            println("Puertos disponibles:")
             for (port in ports) {
                 val systemComPort = SystemComPort(
                     port.systemPortName,
@@ -72,10 +70,6 @@ actual object SerialPortImpl : SerialPortInterface {
                         buffer.add(readString)
                         print(readString)
                     }
-
-//                    if(buffer.size > 1){
-//                        print("SUPERADO NUMERO DE ELEMENTOS CON " + buffer.size + " ELEMENTOS")
-//                    }
 
                     for(i in buffer){
                         _receivedData.value += i

@@ -151,7 +151,7 @@ class HomeScreen : Screen {
                             }
 
                             "add-device" -> {
-                                UsbDeviceSetup () { route -> innerRoute = route }
+                                UsbDeviceSetup ()
                             }
 
                             "systems" -> {

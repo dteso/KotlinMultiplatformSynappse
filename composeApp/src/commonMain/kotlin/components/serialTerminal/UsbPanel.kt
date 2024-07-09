@@ -117,7 +117,7 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                                 if(isTerminal){
                                     UsbTerminal(receivedData)
                                 }else{
-                                    UsbDeviceSetup(onRouteChange)
+                                    UsbDeviceSetup()
                                 }
 
                             }
