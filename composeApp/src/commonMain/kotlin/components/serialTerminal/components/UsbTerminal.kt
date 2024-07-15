@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 fun UsbTerminal(receivedData: String){
     Divider( color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp) )
     Row(
-        modifier = Modifier.fillMaxWidth().background(Color.Black)
+        modifier = Modifier.fillMaxWidth().background(Color(0xFF0E131C))
     ) {
         val dataLines = receivedData.split("\n").asReversed()
         TerminalConsole(dataLines)

@@ -27,7 +27,7 @@ class UiComponentFactory {
     }
 
     @Composable
-    fun createTextHeader(text: String, color: Color = Color.Black) {
+    fun TextHeader(text: String, color: Color = Color.Black) {
         Text(
             text = text,
             modifier = Modifier.padding(20.dp),

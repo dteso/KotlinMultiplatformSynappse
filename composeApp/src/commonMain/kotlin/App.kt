@@ -37,7 +37,7 @@ class FailureScreen: Screen {
     override fun Content(){
         var navigator: Navigator = LocalNavigator.currentOrThrow
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            UiComponentFactory().createTextHeader("H E Y !  W H O   A R E   Y O U  ?")
+            UiComponentFactory().TextHeader("H E Y !  W H O   A R E   Y O U  ?")
             UiComponentFactory().createNavigationButton(MainScreen(), navigator, "Get out from here!")
         }
     }

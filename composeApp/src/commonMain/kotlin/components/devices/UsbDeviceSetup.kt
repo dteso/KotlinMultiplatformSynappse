@@ -52,6 +52,7 @@ import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import utils.serial_port.SerialPortImpl
 
 @Composable
@@ -95,10 +96,12 @@ fun NewDeviceForm(
     var statusReceivedIndex = dataLines.indexOfFirst { it.startsWith("[SYNAPPSE.STATUS]:") }
     var confirmedBootIndex = dataLines.indexOfFirst { it.startsWith("[SYNAPPSE.START]") }
 
-    var updateFormStatus = statusReceivedIndex in 0..2 && dataLines[statusReceivedIndex].startsWith("[SYNAPPSE.STATUS]:") && !editing;
-    var bootConfirmationReceived = confirmedBootIndex in 0..4 && dataLines[confirmedBootIndex].startsWith("[SYNAPPSE.START]");
+    var updateFormStatus =
+        statusReceivedIndex in 0..2 && dataLines[statusReceivedIndex].startsWith("[SYNAPPSE.STATUS]:") && !editing;
+    var bootConfirmationReceived =
+        confirmedBootIndex in 0..4 && dataLines[confirmedBootIndex].startsWith("[SYNAPPSE.START]");
 
-    if (bootConfirmationReceived){
+    if (bootConfirmationReceived) {
         isInitialized = true
         editing = false
     }
@@ -115,7 +118,7 @@ fun NewDeviceForm(
             wifiPassword = newEvent.config!!.staPass
             mac = newEvent.config!!.MAC
             ip = newEvent.config!!.ip
-            timeAlive = newEvent.status!!.timeAlive
+//            timeAlive = newEvent.status!!["timeAlive"].toString()
             mqttServer = newEvent.config!!.mqttServer
             mqttPort = newEvent.config!!.mqttPort
             mqttUser = newEvent.config!!.mqttUser
@@ -166,7 +169,7 @@ fun NewDeviceForm(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black)
+            .background(Color(0xFF0E131C))
             .padding(8.dp)
     ) {
         LazyColumn(
@@ -175,14 +178,15 @@ fun NewDeviceForm(
             horizontalAlignment = Alignment.Start
         ) {
             val textModifier: Modifier = Modifier.padding(horizontal = 5.dp).width(200.dp)
+            val titleTextModifier: Modifier = Modifier.padding(vertical = 15.dp).width(200.dp)
 
             item {
                 UiComponentFactory().Label(
                     "Device",
                     color = Color(0xFFFFFFFF),
-                    fontSize = 16.sp,
+                    fontSize = 20.sp,
                     textAlign = TextAlign.Left,
-                    textModifier
+                    titleTextModifier
                 )
 
                 deviceName = if (deviceName == "null") "" else deviceName
@@ -190,7 +194,7 @@ fun NewDeviceForm(
                     modifier = Modifier.padding(3.dp),
                     value = deviceName,
                     onValueChange = { newValue ->
-                        editing =  true
+                        editing = true
                         deviceName = newValue
                         event = event.copy(config = event.config?.copy(name = newValue))
                     },
@@ -205,7 +209,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -214,9 +218,9 @@ fun NewDeviceForm(
                 OutlinedTextField(
                     modifier = Modifier.padding(3.dp),
                     value = mac,
-                    onValueChange = {
-                        newValue -> mac = newValue
-                        editing =  true
+                    onValueChange = { newValue ->
+                        mac = newValue
+                        editing = true
                     },
                     label = { Text("MAC") },
                     placeholder = { Text("e.g., Garage") },
@@ -233,7 +237,7 @@ fun NewDeviceForm(
                         disabledLabelColor = Color.Gray,
                         disabledTextColor = Color.Gray,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -245,7 +249,10 @@ fun NewDeviceForm(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                Row(
+                    modifier = Modifier.fillParentMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     UiComponentFactory().Label(
                         "WiFi Enabled",
                         color = Color(0xFFFFFFFF),
@@ -254,22 +261,27 @@ fun NewDeviceForm(
                         textModifier
                     )
 
-                    Switch(
-                        checked = wifiEnabled,
-                        onCheckedChange = {
-                            wifiEnabled = it
-                            event = event.copy(config = event.config!!.copy(staEnabled = it))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.Green,
-                            checkedTrackColor = Color.DarkGray,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.LightGray,
+                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                        Switch(
+                            checked = wifiEnabled,
+                            onCheckedChange = {
+                                wifiEnabled = it
+                                event = event.copy(config = event.config!!.copy(staEnabled = it))
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Green,
+                                checkedTrackColor = Color.DarkGray,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.LightGray,
+                            )
                         )
-                    )
+                    }
                 }
 
-                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                Row(
+                    modifier = Modifier.fillParentMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     UiComponentFactory().Label(
                         "Online",
                         color = Color(0xFFFFFFFF),
@@ -277,29 +289,30 @@ fun NewDeviceForm(
                         textAlign = TextAlign.Left,
                         textModifier
                     )
-
-                    Switch(
-                        checked = wifiConnected,
-                        enabled = false,
-                        onCheckedChange = {
-                            wifiConnected = it
-                            event = event.copy(config = event.config!!.copy(wifiConnected = it))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.Green,
-                            checkedTrackColor = Color.DarkGray,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.LightGray,
+                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                        Switch(
+                            checked = wifiConnected,
+                            enabled = false,
+                            onCheckedChange = {
+                                wifiConnected = it
+                                event = event.copy(config = event.config!!.copy(wifiConnected = it))
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Green,
+                                checkedTrackColor = Color.DarkGray,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.LightGray,
+                            )
                         )
-                    )
+                    }
                 }
 
                 OutlinedTextField(
                     modifier = Modifier.padding(3.dp),
                     value = ip,
-                    onValueChange = {
-                        newValue -> ip = newValue
-                        editing =  true
+                    onValueChange = { newValue ->
+                        ip = newValue
+                        editing = true
                     },
                     label = { Text("IP") },
                     placeholder = { Text("e.g., Garage") },
@@ -316,7 +329,7 @@ fun NewDeviceForm(
                         disabledLabelColor = Color.Gray,
                         disabledTextColor = Color.Gray,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -329,7 +342,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         wifiSsid = newValue
                         event = event.copy(config = event.config?.copy(staSsid = newValue))
-                        editing =  true
+                        editing = true
                     },
                     label = { Text("SSID") },
                     placeholder = { Text("e.g., MiFibra-9B0C") },
@@ -342,7 +355,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -355,7 +368,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         wifiPassword = newValue
                         event = event.copy(config = event.config?.copy(staPass = newValue))
-                        editing =  true
+                        editing = true
                     },
                     label = { Text("Password") },
                     placeholder = { Text("e.g., xxxxxxxxxxx") },
@@ -368,7 +381,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -380,7 +393,10 @@ fun NewDeviceForm(
                     modifier = Modifier.padding(16.dp)
                 )
 
-                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                Row(
+                    modifier = Modifier.fillParentMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     UiComponentFactory().Label(
                         "MQTT Enabled",
                         color = Color(0xFFFFFFFF),
@@ -389,22 +405,27 @@ fun NewDeviceForm(
                         textModifier
                     )
 
-                    Switch(
-                        checked = mqttEnabled,
-                        onCheckedChange = {
-                            mqttEnabled = it
-                            event = event.copy(config = event.config!!.copy(mqttEnabled = it))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color(0xFFFF00FF),
-                            checkedTrackColor = Color.DarkGray,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.LightGray,
+                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                        Switch(
+                            checked = mqttEnabled,
+                            onCheckedChange = {
+                                mqttEnabled = it
+                                event = event.copy(config = event.config!!.copy(mqttEnabled = it))
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFFFF00FF),
+                                checkedTrackColor = Color.DarkGray,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.LightGray,
+                            )
                         )
-                    )
+                    }
                 }
 
-                Row(modifier = Modifier.fillParentMaxWidth(), verticalAlignment = Alignment.CenterVertically){
+                Row(
+                    modifier = Modifier.fillParentMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     UiComponentFactory().Label(
                         "MQTT Online",
                         color = Color(0xFFFFFFFF),
@@ -413,20 +434,22 @@ fun NewDeviceForm(
                         textModifier
                     )
 
-                    Switch(
-                        checked = mqttConnected,
-                        enabled = false,
-                        onCheckedChange = {
-                            mqttConnected = it
-                            event = event.copy(config = event.config!!.copy(mqttConnected = it))
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color(0xFFFF00FF),
-                            checkedTrackColor = Color.DarkGray,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color.LightGray,
+                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                        Switch(
+                            checked = mqttConnected,
+                            enabled = false,
+                            onCheckedChange = {
+                                mqttConnected = it
+                                event = event.copy(config = event.config!!.copy(mqttConnected = it))
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFFFF00FF),
+                                checkedTrackColor = Color.DarkGray,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.LightGray,
+                            )
                         )
-                    )
+                    }
                 }
 
                 OutlinedTextField(
@@ -435,7 +458,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttServer = newValue
                         event = event.copy(config = event.config?.copy(mqttServer = newValue))
-                        editing =  true
+                        editing = true
                     },
                     label = { Text("MQTT Broker") },
                     placeholder = { Text("e.g., Garage") },
@@ -448,7 +471,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -460,7 +483,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttPort = newValue.toInt()
                         event = event.copy(config = event.config?.copy(mqttPort = newValue.toInt()))
-                        editing =  true
+                        editing = true
                     },
                     label = { Text("MQTT Port") },
                     placeholder = { Text("e.g., myuser") },
@@ -473,7 +496,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -485,7 +508,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttUser = newValue
                         event = event.copy(config = event.config?.copy(mqttUser = newValue))
-                        editing =  true
+                        editing = true
                     },
                     label = { Text("MQTT User") },
                     placeholder = { Text("e.g., mymqttuser") },
@@ -498,7 +521,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -510,7 +533,7 @@ fun NewDeviceForm(
                     onValueChange = { newValue ->
                         mqttPassword = newValue
                         event = event.copy(config = event.config?.copy(mqttPassword = newValue))
-                        editing =  true
+                        editing = true
                     },
                     label = { Text("MQTT Password") },
                     placeholder = { Text("e.g., *************") },
@@ -523,7 +546,7 @@ fun NewDeviceForm(
                         unfocusedBorderColor = Color.White,
                         cursorColor = Color.Cyan,
                         selectionColors = TextSelectionColors(
-                            handleColor = Color.Black,
+                            handleColor = Color(0xFF0E131C),
                             backgroundColor = Color(0x5500DDFF),
                         )
                     )
@@ -538,9 +561,9 @@ fun NewDeviceForm(
                 UiComponentFactory().Label(
                     "Ports",
                     color = Color(0xFFFFFFFF),
-                    fontSize = 16.sp,
+                    fontSize = 20.sp,
                     textAlign = TextAlign.Left,
-                    textModifier
+                    titleTextModifier
                 )
 
                 Row(
@@ -656,7 +679,7 @@ fun NewDeviceForm(
                 var isAdding by remember { mutableStateOf(false) }
 
                 if (isAdding) {
-                    editing =  true
+                    editing = true
                     PortsFormDialog(
                         onDismissRequest = { isAdding = false },
                         onConfirmation = { port ->
@@ -670,7 +693,8 @@ fun NewDeviceForm(
                 Row(
                     Modifier
                         .padding(2.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .background(Color(0xFF004D4D)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -685,11 +709,51 @@ fun NewDeviceForm(
                 }
                 Divider(color = Color.DarkGray, thickness = 1.dp)
 
+                UiComponentFactory().Label(
+                    "Status",
+                    color = Color(0xFFFFFFFF),
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Left,
+                    titleTextModifier
+                )
+
+                Divider(color = Color.DarkGray, thickness = 1.dp)
+                val status: JsonObject? = event.status
+                status?.let {
+                    for ((key, value) in it.entries) {
+                        println("key: $key, value: $value")
+                        Row(
+                            Modifier
+                                .padding(2.dp)
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(
+                                Modifier.width(200.dp),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(text = key.replace("\"", ""))
+                            }
+                            Column(
+                                Modifier.width(1080.dp),
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(value.toString().replace("\"", ""))
+                            }
+                        }
+                        Divider(color = Color.DarkGray, thickness = 1.dp)
+                    }
+                }
+
+
                 Row {
                     Button(
                         onClick = {
                             var strConfig = Json.encodeToString(event.config)
-                            strConfig = strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
+                            strConfig =
+                                strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
                             val setConfigCommand = "---set_config:${strConfig}"
                             SerialPortImpl.write(
                                 setConfigCommand.toByteArray(
@@ -702,11 +766,11 @@ fun NewDeviceForm(
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF00DDFF),
-                            contentColor = Color(0xFF223240)
+                            contentColor = Color(0xFF0E131C)
                         ),
                         modifier = Modifier
                             .width(150.dp)
-                            .background(Color.Black)
+                            .background(Color(0xFF0E131C))
                             .padding(20.dp)
                             .height(36.dp)
                     ) {
@@ -729,7 +793,7 @@ fun NewDeviceForm(
                                     Charsets.UTF_8
                                 )
                             )
-                            editing =  false
+                            editing = false
                         },
                         isInitialized = isInitialized
                     )
@@ -750,7 +814,7 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
     Row(
         Modifier
             .padding(2.dp)
-            .fillMaxWidth().background(Color(0xFF223240)),
+            .fillMaxWidth().background(Color(0xFF0E131C)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -776,7 +840,7 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
                     unfocusedBorderColor = Color.White,
                     cursorColor = Color.Cyan,
                     selectionColors = TextSelectionColors(
-                        handleColor = Color.Black,
+                        handleColor = Color(0xFF0E131C),
                         backgroundColor = Color(0x5500DDFF),
                     )
                 )
@@ -804,7 +868,7 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
                     unfocusedBorderColor = Color.White,
                     cursorColor = Color.Cyan,
                     selectionColors = TextSelectionColors(
-                        handleColor = Color.Black,
+                        handleColor = Color(0xFF0E131C),
                         backgroundColor = Color(0x5500DDFF),
                     )
                 )
@@ -890,7 +954,7 @@ fun DynamicSelectTextField(
                 unfocusedBorderColor = Color.White,
                 cursorColor = Color.Cyan,
                 selectionColors = TextSelectionColors(
-                    handleColor = Color.Black,
+                    handleColor = Color(0xFF0E131C),
                     backgroundColor = Color(0x5500DDFF),
                 )
             ),
@@ -926,7 +990,7 @@ fun PortsFormDialog(
                 .height(400.dp)
                 .width(290.dp)
                 .padding(16.dp)
-                .background(Color(0xFF223240))
+                .background(Color(0xFF0E131C))
         ) {
 
             Column(Modifier.background(Color(0xBB223240)).fillMaxWidth()) {
@@ -942,7 +1006,7 @@ fun PortsFormDialog(
 
             Column(
                 modifier = Modifier
-                    .fillMaxSize().background(Color(0xFF223240)),
+                    .fillMaxSize().background(Color(0xFF0E131C)),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -1000,7 +1064,7 @@ fun OnProcessingDialog(
                 .height(400.dp)
                 .width(290.dp)
                 .padding(16.dp)
-                .background(Color(0xFF223240))
+                .background(Color(0xFF0E131C))
         ) {
 
             Column(Modifier.background(Color(0xBB223240)).fillMaxWidth()) {
@@ -1015,7 +1079,7 @@ fun OnProcessingDialog(
             }
             Column(
                 modifier = Modifier
-                    .fillMaxSize().background(Color(0xFF223240)),
+                    .fillMaxSize().background(Color(0xFF0E131C)),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -1048,7 +1112,7 @@ fun OnProcessingDialog(
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    if(isInitialized){
+                    if (isInitialized) {
                         TextButton(
                             onClick = {
                                 onConfirmation()

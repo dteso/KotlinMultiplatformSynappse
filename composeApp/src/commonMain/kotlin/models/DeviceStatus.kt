@@ -1,10 +1,12 @@
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class Event(
     val event: String?,
     var config: Config?,
-    val status: Status?
+//    val status: Status?
+    var status: JsonObject?
 )
 
 @Serializable

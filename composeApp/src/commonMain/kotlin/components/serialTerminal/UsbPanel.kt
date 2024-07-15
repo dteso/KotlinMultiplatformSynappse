@@ -93,7 +93,7 @@ fun UsbPanel(onRouteChange: (String) -> Unit) {
                     for (port in ports!!) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
+                                containerColor = Color(0xFF0E131C),
                                 contentColor = Color.White
                             ),
                             modifier = Modifier
@@ -199,7 +199,7 @@ fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit,
             horizontalArrangement = Arrangement.Start,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .background(Color.Black)
+                .background(Color(0xFF0E131C))
                 .padding(5.dp)
         ) {
 
@@ -241,7 +241,7 @@ fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit,
             horizontalAlignment = Alignment.End,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .background(Color.Black)
+                .background(Color(0xFF0E131C))
                 .padding(5.dp)
         ) {
             Button(
@@ -258,7 +258,7 @@ fun UsbOptionsButtons(sendText: TextFieldValue, onRouteChange: (String) -> Unit,
                 ),
                 modifier = Modifier
                     .width(80.dp)
-                    .background(Color.Black)
+                    .background(Color(0xFF0E131C))
                     .height(36.dp) // Ajusta el tamaño aquí
             ) {
                 Icon(
@@ -277,7 +277,7 @@ fun UsbTerminalInput(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Black),
+            .background(Color(0xFF0E131C)),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Column(
@@ -285,7 +285,7 @@ fun UsbTerminalInput(
                 .padding(5.dp)
                 .fillMaxWidth()
                 .align(Alignment.CenterVertically)
-                .background(Color.Black)
+                .background(Color(0xFF0E131C))
         ) {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth().padding(5.dp).width(380.dp),
@@ -303,7 +303,7 @@ fun UsbTerminalInput(
                     unfocusedBorderColor = Color.White,
                     cursorColor = Color.Cyan,
                     selectionColors = TextSelectionColors(
-                        handleColor = Color.Black,
+                        handleColor = Color(0xFF0E131C),
                         backgroundColor = Color(0x5500DDFF),
                     )
                 ),
