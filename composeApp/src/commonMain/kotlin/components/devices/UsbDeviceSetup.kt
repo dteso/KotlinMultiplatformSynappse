@@ -2,6 +2,7 @@ package components.devices
 
 import Event
 import Port
+import Action
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -84,6 +85,7 @@ fun NewDeviceForm(
     var wifiConnected by remember { mutableStateOf(false) }
 
     var ports by remember { mutableStateOf<MutableList<Port>>(mutableListOf()) }
+    var actions by remember { mutableStateOf<MutableList<Action>>(mutableListOf()) }
 
     var event by remember { mutableStateOf(Event(null, null, null)) }
 
@@ -128,6 +130,7 @@ fun NewDeviceForm(
             wifiConnected = newEvent.config!!.wifiConnected
             wifiEnabled = newEvent.config!!.staEnabled
             ports = newEvent.config!!.ports?.toMutableList() ?: mutableListOf()
+            actions = newEvent.config!!.actions?.toMutableList() ?: mutableListOf()
             event = newEvent
             println("STATUS UPDATE SUCCESS!!!" + event)
         } catch (e: Exception) {
@@ -183,8 +186,8 @@ fun NewDeviceForm(
             item {
                 UiComponentFactory().Label(
                     "Device",
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 20.sp,
+                                color = Color(0xFF2277AA),
+                    fontSize = 25.sp,
                     textAlign = TextAlign.Left,
                     titleTextModifier
                 )
@@ -552,16 +555,58 @@ fun NewDeviceForm(
                     )
                 )
 
+                Row {
+                    Button(
+                        onClick = {
+                            var deviceConfig = event.config?.copy()
+                            deviceConfig!!.ports = mutableListOf()
+                            deviceConfig!!.actions = mutableListOf()
+                            var strConfig = Json.encodeToString(deviceConfig)
+                            strConfig =
+                                strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
+                            val setConfigCommand = "---set_config:${strConfig}"
+                            SerialPortImpl.write(
+                                setConfigCommand.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+                            println(event)
+                            isInitialized = false
+                            onProcessingModalOpen = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00DDFF),
+                            contentColor = Color(0xFF0E131C)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF0E131C))
+                            .padding(20.dp)
+                            .height(36.dp)
+                    ) {
+                        Text("SET CONFIGURATION")
+                    }
+                }
+
                 Divider(
                     color = Color.DarkGray,
                     thickness = 1.dp,
                     modifier = Modifier.padding(16.dp)
                 )
 
+
+
+
+
+
+
+                /*******************
+                 *  PORTS
+                 * *****************/
                 UiComponentFactory().Label(
                     "Ports",
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 20.sp,
+                    color = Color(0xFF2277AA),
+                    fontSize = 25.sp,
                     textAlign = TextAlign.Left,
                     titleTextModifier
                 )
@@ -675,9 +720,7 @@ fun NewDeviceForm(
                     }
                     Divider(color = Color.DarkGray, thickness = 1.dp)
                 }
-
                 var isAdding by remember { mutableStateOf(false) }
-
                 if (isAdding) {
                     editing = true
                     PortsFormDialog(
@@ -689,7 +732,6 @@ fun NewDeviceForm(
                         }
                     )
                 }
-
                 Row(
                     Modifier
                         .padding(2.dp)
@@ -708,11 +750,196 @@ fun NewDeviceForm(
                     }
                 }
                 Divider(color = Color.DarkGray, thickness = 1.dp)
+                Row {
+                    Button(
+                        onClick = {
+                            var strPortsConfig = Json.encodeToString(event.config!!.ports)
+                            strPortsConfig =
+                                strPortsConfig.replace("true", "\"true\"").replace("false", "\"false\"")
+                            val setConfigCommand = "---set_config:{ports:${strPortsConfig}}"
+                            SerialPortImpl.write(
+                                setConfigCommand.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+                            println(event)
+                            isInitialized = false
+                            onProcessingModalOpen = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00DDFF),
+                            contentColor = Color(0xFF0E131C)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF0E131C))
+                            .padding(20.dp)
+                            .height(36.dp)
+                    ) {
+                        Text("SET PORTS")
+                    }
+                }
+                Divider(
+                    color = Color.DarkGray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(16.dp)
+                )
 
+
+
+
+
+
+
+                /*******************
+                 *  ACTIONS
+                 * *****************/
+                UiComponentFactory().Label(
+                    "Actions",
+                                color = Color(0xFF2277AA),
+                    fontSize = 25.sp,
+                    textAlign = TextAlign.Left,
+                    titleTextModifier
+                )
+
+                Row(
+                    Modifier
+                        .padding(4.dp)
+                        .fillMaxWidth()
+                        .background(Color(0xFF004D4D)),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Column(
+                        Modifier.width(200.dp)
+                    ) {
+                        Text("Name")
+                    }
+                    Column(
+                        Modifier.width(120.dp)
+                    ) {
+                        Text("Scheduled")
+                    }
+                    Column(
+                        Modifier.width(20.dp)
+                    ) {
+                        // Empty
+                    }
+                }
+
+                for ((index, action) in actions.withIndex()) {
+                    Row(
+                        Modifier
+                            .padding(2.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(
+                            Modifier.width(200.dp)
+                        ) {
+                            Text(action.actionName)
+                        }
+                        Column(
+                            Modifier.width(120.dp)
+                        ) {
+                            Text(action.scheduled)
+                        }
+                        Column(
+                            Modifier.width(20.dp)
+                        ) {
+                            IconButton(onClick = {
+                                // None
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = "Edit"
+                                )
+                            }
+                        }
+                    }
+                    Divider(color = Color.DarkGray, thickness = 1.dp)
+                }
+                var isAddingAction by remember { mutableStateOf(false) }
+                if (isAddingAction) {
+                    editing = true
+                    PortsFormDialog(
+                        onDismissRequest = { isAddingAction = false },
+                        onConfirmation = { port ->
+//                                actions.add(port)
+//                                event = event.copy(config = event.config!!.copy(ports = ports))
+                            isAddingAction = false
+                        }
+                    )
+                }
+                Row(
+                    Modifier
+                        .padding(2.dp)
+                        .fillMaxWidth()
+                        .background(Color(0xFF004D4D)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    IconButton(onClick = {
+                        isAdding = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Sharp.AddCircle,
+                            contentDescription = "Add Element"
+                        )
+                    }
+                }
+                Divider(color = Color.DarkGray, thickness = 1.dp)
+                Row {
+                    Button(
+                        onClick = {
+                            var strConfig = Json.encodeToString(event.config)
+                            strConfig =
+                                strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
+                            val setConfigCommand = "---set_config:${strConfig}"
+                            SerialPortImpl.write(
+                                setConfigCommand.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+                            println(event)
+                            isInitialized = false
+                            onProcessingModalOpen = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00DDFF),
+                            contentColor = Color(0xFF0E131C)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF0E131C))
+                            .padding(20.dp)
+                            .height(36.dp)
+                    ) {
+                        Text("SET ACTIONS")
+                    }
+                }
+                Divider(
+                    color = Color.DarkGray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+
+
+
+
+
+
+
+
+
+                /*******************
+                 *  STATUS
+                 * *****************/
                 UiComponentFactory().Label(
                     "Status",
-                    color = Color(0xFFFFFFFF),
-                    fontSize = 20.sp,
+                                color = Color(0xFF2277AA),
+                    fontSize = 25.sp,
                     textAlign = TextAlign.Left,
                     titleTextModifier
                 )
@@ -744,40 +971,6 @@ fun NewDeviceForm(
                             }
                         }
                         Divider(color = Color.DarkGray, thickness = 1.dp)
-                    }
-                }
-
-
-                Row {
-                    Button(
-                        onClick = {
-                            var strConfig = Json.encodeToString(event.config)
-                            strConfig =
-                                strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
-                            val setConfigCommand = "---set_config:${strConfig}"
-                            SerialPortImpl.write(
-                                setConfigCommand.toByteArray(
-                                    Charsets.UTF_8
-                                )
-                            )
-                            println(event)
-                            isInitialized = false
-                            onProcessingModalOpen = true
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00DDFF),
-                            contentColor = Color(0xFF0E131C)
-                        ),
-                        modifier = Modifier
-                            .width(150.dp)
-                            .background(Color(0xFF0E131C))
-                            .padding(20.dp)
-                            .height(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.PlayArrow,
-                            contentDescription = "Set configuration"
-                        )
                     }
                 }
 

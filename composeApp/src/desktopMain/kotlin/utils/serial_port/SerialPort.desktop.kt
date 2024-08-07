@@ -58,7 +58,7 @@ actual object SerialPortImpl : SerialPortInterface {
 
         if (port.isOpen) {
             job = CoroutineScope(Dispatchers.IO).launch {
-                val readBuffer = ByteArray(1024)
+                val readBuffer = ByteArray(8192)
                 systemCommPorts[0].isOpen = true
 
                 var buffer: MutableList<String> = mutableListOf()

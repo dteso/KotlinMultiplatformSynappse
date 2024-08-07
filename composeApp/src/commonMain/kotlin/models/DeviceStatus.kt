@@ -5,7 +5,6 @@ import kotlinx.serialization.json.JsonObject
 data class Event(
     val event: String?,
     var config: Config?,
-//    val status: Status?
     var status: JsonObject?
 )
 
@@ -19,7 +18,6 @@ data class Config(
     var name: String,
     var deviceType: String,
     var MAC: String,
-    var ports: List<Port>? = null, // De esta forma es nullable o puede no venir en la definición del json
     var mqttServer: String,
     var mqttPort: Int,
     var mqttUser: String,
@@ -27,7 +25,9 @@ data class Config(
     var mqttEnabled: Boolean,
     var staEnabled: Boolean,
     var wifiConnected: Boolean,
-    var mqttConnected: Boolean
+    var mqttConnected: Boolean,
+    var ports: List<Port>? = null, // De esta forma es nullable o puede no venir en la definición del json
+    var actions: List<Action>? = null, // De esta forma es nullable o puede no venir en la definición del json
 
 )
 
@@ -41,7 +41,10 @@ data class Port(
 )
 
 @Serializable
-data class Status(
-    val timeAlive: String,
-//    val temperature: String?
+data class Action(
+    val actionName: String,
+    val arguments: String,
+    val callbackName: String,
+    val scheduled: String
 )
+
