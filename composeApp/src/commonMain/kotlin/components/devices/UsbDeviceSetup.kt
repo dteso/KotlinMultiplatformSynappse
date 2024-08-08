@@ -1125,23 +1125,20 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
 
 @Composable
 fun FormActionRow(onActionFormChanged: (Action) -> Unit) {
-    var actionName by remember { mutableStateOf("") }
-    var scheduled by remember { mutableStateOf("") }
-    var callbackName by remember { mutableStateOf("") }
-    var arguments by remember { mutableStateOf("") }
+    var actionName by remember { mutableStateOf("SET_WHATEVER") }
+    var scheduled by remember { mutableStateOf("XX:XX:XXXX:XX:XX:00") }
+    var callbackName by remember { mutableStateOf("my_function") }
+    var arguments by remember { mutableStateOf("{'key':'value'}") }
 
-    Row(
-        Modifier
-            .padding(2.dp)
-            .fillMaxWidth().background(Color(0xFF0E131C)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Column(
-            Modifier.width(100.dp)
+        Row(
+            Modifier
+                .padding(2.dp)
+                .fillMaxWidth().background(Color(0xFF0E131C)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             OutlinedTextField(
-                modifier = Modifier.padding(3.dp).width(100.dp),
+                modifier = Modifier.padding(3.dp),
                 value = actionName,
                 onValueChange = { newValue ->
                     actionName = newValue
@@ -1149,7 +1146,7 @@ fun FormActionRow(onActionFormChanged: (Action) -> Unit) {
                     onActionFormChanged(action)
                 },
                 label = { Text("Name") },
-                placeholder = { Text("") },
+                placeholder = { Text("MY_ACTION") },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedLabelColor = Color.Cyan,
                     unfocusedLabelColor = Color.White,
@@ -1165,11 +1162,15 @@ fun FormActionRow(onActionFormChanged: (Action) -> Unit) {
                 )
             )
         }
-        Column(
-            Modifier.width(300.dp)
+        Row(
+            Modifier
+                .padding(2.dp)
+                .fillMaxWidth().background(Color(0xFF0E131C)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             OutlinedTextField(
-                modifier = Modifier.padding(3.dp).width(300.dp),
+                modifier = Modifier.padding(3.dp),
                 value = scheduled,
                 onValueChange = { newValue ->
                     scheduled = newValue
@@ -1177,7 +1178,7 @@ fun FormActionRow(onActionFormChanged: (Action) -> Unit) {
                     onActionFormChanged(action)
                 },
                 label = { Text("Scheduled") },
-                placeholder = { Text("SCHEDULED") },
+                placeholder = { Text("XX:XX:XXXX:XX:XX:00") },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedLabelColor = Color.Cyan,
                     unfocusedLabelColor = Color.White,
@@ -1193,7 +1194,70 @@ fun FormActionRow(onActionFormChanged: (Action) -> Unit) {
                 )
             )
         }
-    }
+        Row(
+            Modifier
+                .padding(2.dp)
+                .fillMaxWidth().background(Color(0xFF0E131C)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.padding(3.dp),
+                value = arguments,
+                onValueChange = { newValue ->
+                    arguments = newValue
+                    val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
+                    onActionFormChanged(action)
+                },
+                label = { Text("Arguments") },
+                placeholder = { Text("{'key':'value'}") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedLabelColor = Color.Cyan,
+                    unfocusedLabelColor = Color.White,
+                    focusedBorderColor = Color.Cyan,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = Color.White,
+                    cursorColor = Color.Cyan,
+                    selectionColors = TextSelectionColors(
+                        handleColor = Color(0xFF0E131C),
+                        backgroundColor = Color(0x5500DDFF),
+                    )
+                )
+            )
+        }
+        Row(
+            Modifier
+                .padding(2.dp)
+                .fillMaxWidth().background(Color(0xFF0E131C)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            OutlinedTextField(
+                modifier = Modifier.padding(3.dp),
+                value = callbackName,
+                onValueChange = { newValue ->
+                    callbackName = newValue
+                    val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
+                    onActionFormChanged(action)
+                },
+                label = { Text("Function") },
+                placeholder = { Text("my_function") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedLabelColor = Color.Cyan,
+                    unfocusedLabelColor = Color.White,
+                    focusedBorderColor = Color.Cyan,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    unfocusedBorderColor = Color.White,
+                    cursorColor = Color.Cyan,
+                    selectionColors = TextSelectionColors(
+                        handleColor = Color(0xFF0E131C),
+                        backgroundColor = Color(0x5500DDFF),
+                    )
+                )
+            )
+        }
 }
 
 fun setFormValueAsPort(pin: String, alias: String, mode: String, type: String): Port {
@@ -1352,7 +1416,7 @@ fun ActionsFormDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(400.dp)
+                .height(500.dp)
                 .width(290.dp)
                 .padding(16.dp)
                 .background(Color(0xFF0E131C))
@@ -1436,7 +1500,7 @@ fun OnProcessingDialog(
             Column(Modifier.background(Color(0xBB223240)).fillMaxWidth()) {
                 val textModifier: Modifier = Modifier.padding(10.dp)
                 UiComponentFactory().Label(
-                    "Port Configuration",
+                    "Programming device",
                     color = Color(0xFFFFFFFF),
                     fontSize = 16.sp,
                     textAlign = TextAlign.Left,
