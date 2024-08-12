@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +22,9 @@ import androidx.compose.material.ExposedDropdownMenuDefaults
 import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.sharp.AddCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -136,35 +139,6 @@ fun NewDeviceForm(
             println("Failed to decode JSON: ${e.message}")
         }
     }
-//    for (line in dataLines) {
-//        if (!isInitialized) {
-//            if (line.startsWith("[SYNAPPSE.STATUS]:")) {
-//                val statusJson = line.removePrefix("[SYNAPPSE.STATUS]:").trim()
-//                try {
-//                    val json = Json {
-//                        ignoreUnknownKeys = true
-//                    }
-//                    val newEvent = json.decodeFromString<Event>(statusJson)
-//                    deviceName = newEvent.config!!.name
-//                    wifiSsid = newEvent.config!!.staSsid
-//                    wifiPassword = newEvent.config!!.staPass
-//                    mac = newEvent.config!!.MAC
-//                    ip = newEvent.config!!.ip
-//                    timeAlive = newEvent.status!!.timeAlive
-//                    mqttServer = newEvent.config!!.mqttServer
-//                    mqttPort = newEvent.config!!.mqttPort
-//                    mqttUser = newEvent.config!!.mqttUser
-//                    mqttPassword = newEvent.config!!.mqttPassword
-//                    ports = newEvent.config!!.ports?.toMutableList() ?: mutableListOf()
-//                    event = newEvent
-//                    isInitialized = true
-//                } catch (e: Exception) {
-//                    println("Failed to decode JSON: ${e.message}")
-//                }
-//                break
-//            }
-//        }
-//    }
 
     Divider(color = Color.DarkGray, thickness = 1.dp, modifier = Modifier.padding(top = 5.dp))
     Row(
@@ -180,16 +154,52 @@ fun NewDeviceForm(
             horizontalAlignment = Alignment.Start
         ) {
             val textModifier: Modifier = Modifier.padding(horizontal = 5.dp).width(200.dp)
-            val titleTextModifier: Modifier = Modifier.padding(vertical = 15.dp).width(200.dp)
+            val titleTextModifier: Modifier = Modifier.padding(vertical = 15.dp).width(300.dp)
 
             item {
-                UiComponentFactory().Label(
-                    "Device",
-                    color = Color(0xFF2277AA),
-                    fontSize = 25.sp,
-                    textAlign = TextAlign.Left,
-                    titleTextModifier
-                )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically){
+                    UiComponentFactory().Label(
+                        "Device setup",
+                        color = Color(0xFF2277AA),
+                        fontSize = 25.sp,
+                        textAlign = TextAlign.Left,
+                        titleTextModifier
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button(
+                        onClick = {
+                            var deviceConfig = event.config?.copy()
+                            deviceConfig!!.ports = mutableListOf()
+                            deviceConfig!!.actions = mutableListOf()
+                            var strConfig = Json.encodeToString(deviceConfig)
+                            strConfig =
+                                strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
+                            val setConfigCommand = "---set_config:${strConfig}"
+                            SerialPortImpl.write(
+                                setConfigCommand.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+                            println(event)
+                            isInitialized = false
+                            onProcessingModalOpen = true
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00DDFF),
+                            contentColor = Color(0xFF0E131C)
+                        ),
+                        modifier = Modifier
+                            .background(Color(0xFF0E131C))
+                            .height(36.dp)
+                    ) {
+                        Text("SET CONFIGURATION")
+                    }
+                }
+
 
                 deviceName = if (deviceName == "null") "" else deviceName
                 OutlinedTextField(
@@ -263,7 +273,9 @@ fun NewDeviceForm(
                         textModifier
                     )
 
-                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Column(horizontalAlignment = Alignment.End) {
                         Switch(
                             checked = wifiEnabled,
                             onCheckedChange = {
@@ -291,7 +303,9 @@ fun NewDeviceForm(
                         textAlign = TextAlign.Left,
                         textModifier
                     )
-                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Column(horizontalAlignment = Alignment.End) {
                         Switch(
                             checked = wifiConnected,
                             enabled = false,
@@ -407,7 +421,9 @@ fun NewDeviceForm(
                         textModifier
                     )
 
-                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Column(horizontalAlignment = Alignment.End) {
                         Switch(
                             checked = mqttEnabled,
                             onCheckedChange = {
@@ -436,7 +452,9 @@ fun NewDeviceForm(
                         textModifier
                     )
 
-                    Column(Modifier.width(1080.dp), horizontalAlignment = Alignment.End) {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Column(horizontalAlignment = Alignment.End) {
                         Switch(
                             checked = mqttConnected,
                             enabled = false,
@@ -554,43 +572,10 @@ fun NewDeviceForm(
                     )
                 )
 
-                Row {
-                    Button(
-                        onClick = {
-                            var deviceConfig = event.config?.copy()
-                            deviceConfig!!.ports = mutableListOf()
-                            deviceConfig!!.actions = mutableListOf()
-                            var strConfig = Json.encodeToString(deviceConfig)
-                            strConfig =
-                                strConfig.replace("true", "\"true\"").replace("false", "\"false\"")
-                            val setConfigCommand = "---set_config:${strConfig}"
-                            SerialPortImpl.write(
-                                setConfigCommand.toByteArray(
-                                    Charsets.UTF_8
-                                )
-                            )
-                            println(event)
-                            isInitialized = false
-                            onProcessingModalOpen = true
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00DDFF),
-                            contentColor = Color(0xFF0E131C)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFF0E131C))
-                            .padding(20.dp)
-                            .height(36.dp)
-                    ) {
-                        Text("SET CONFIGURATION")
-                    }
-                }
-
                 Divider(
-                    color = Color.DarkGray,
+                    color = Color.White,
                     thickness = 1.dp,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
                 )
 
                 /*******************
@@ -608,6 +593,9 @@ fun NewDeviceForm(
                     },
                     onProcessingModalOpen = {
                         onProcessingModalOpen = it
+                    },
+                    onCurrentPortsDelete = {
+                        ports = it
                     }
                 )
 
@@ -626,6 +614,9 @@ fun NewDeviceForm(
                     },
                     onProcessingModalOpen = {
                         onProcessingModalOpen = it
+                    },
+                    onCurrentActionsDelete = {
+                        actions = it
                     }
                 )
 
@@ -696,9 +687,9 @@ fun NewDeviceForm(
 
 
 @Composable
-fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modifier, onEditing: (Boolean) -> Unit, onInitialized: (Boolean) -> Unit, onProcessingModalOpen: (Boolean) -> Unit){
+fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modifier, onEditing: (Boolean) -> Unit, onInitialized: (Boolean) -> Unit, onProcessingModalOpen: (Boolean) -> Unit, onCurrentPortsDelete: (MutableList<Port>) -> Unit){
     UiComponentFactory().Label(
-        "Ports",
+        "GPIO definition",
         color = Color(0xFF2277AA),
         fontSize = 25.sp,
         textAlign = TextAlign.Left,
@@ -709,7 +700,7 @@ fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modi
         Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .background(Color(0xFF004D4D)),
+            .background(Color(0xFF2277AA)),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Column(
@@ -800,14 +791,30 @@ fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modi
                 )
             }
             Column(
-                Modifier.width(20.dp)
+                Modifier.width(30.dp)
             ) {
                 IconButton(onClick = {
                     // None
                 }) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
-                        contentDescription = "Edit"
+                        contentDescription = "Edit",
+                        tint = Color.Cyan
+                    )
+                }
+            }
+            Column(
+                Modifier.width(30.dp)
+            ) {
+                IconButton(onClick = {
+                    var currentPorts = ports.filterIndexed { i, _ -> i != index }.toMutableList()
+                    onCurrentPortsDelete(currentPorts)
+                    event.config = event.config!!.copy(ports = currentPorts)
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = Color.Red
                     )
                 }
             }
@@ -830,7 +837,7 @@ fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modi
         Modifier
             .padding(2.dp)
             .fillMaxWidth()
-            .background(Color(0xFF004D4D)),
+            .background(Color.Transparent),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -843,7 +850,7 @@ fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modi
             )
         }
     }
-    Divider(color = Color.DarkGray, thickness = 1.dp)
+//    Divider(color = Color.DarkGray, thickness = 1.dp)
     Row {
         Button(
             onClick = {
@@ -874,47 +881,26 @@ fun PortsManager(event: Event, ports: MutableList<Port>, titleTextModifier: Modi
         }
     }
     Divider(
-        color = Color.DarkGray,
+        color = Color.White,
         thickness = 1.dp,
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
     )
 }
 
 
 @Composable
-fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier: Modifier, onEditing: (Boolean) -> Unit, onInitialized: (Boolean) -> Unit, onProcessingModalOpen: (Boolean) -> Unit){
+fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier: Modifier, onEditing: (Boolean) -> Unit, onInitialized: (Boolean) -> Unit, onProcessingModalOpen: (Boolean) -> Unit, onCurrentActionsDelete: (MutableList<Action>) -> Unit){
     UiComponentFactory().Label(
-        "Actions",
+        "Actions configuration",
         color = Color(0xFF2277AA),
         fontSize = 25.sp,
         textAlign = TextAlign.Left,
         titleTextModifier
     )
 
-    Row(
-        Modifier
-            .padding(4.dp)
-            .fillMaxWidth()
-            .background(Color(0xFF004D4D)),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Column(
-            Modifier.width(200.dp)
-        ) {
-            Text("Name")
-        }
-        Column(
-            Modifier.width(120.dp)
-        ) {
-            Text("Scheduled")
-        }
-        Column(
-            Modifier.width(20.dp)
-        ) {
-            // Empty
-        }
-    }
-
+    var selectedAction by remember { mutableStateOf(Action()) }
+    var selectedIndex by remember { mutableStateOf(-1) }
+    var isAddingAction by remember { mutableStateOf(false) }
     for ((index, action) in actions.withIndex()) {
         Row(
             Modifier
@@ -924,38 +910,73 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Column(
-                Modifier.width(200.dp)
+                Modifier.width(200.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                Text(action.actionName)
+                Text(action.actionName!!.uppercase())
             }
+            Spacer(Modifier.weight(1f))
             Column(
-                Modifier.width(120.dp)
-            ) {
-                Text(action.scheduled)
-            }
-            Column(
-                Modifier.width(20.dp)
+                Modifier.width(30.dp)
             ) {
                 IconButton(onClick = {
-                    // None
+                    selectedIndex = index
+                    selectedAction = actions[index]
+                    isAddingAction = true
                 }) {
                     Icon(
                         imageVector = Icons.Filled.Edit,
-                        contentDescription = "Edit"
+                        contentDescription = "Edit",
+                        tint = Color.Cyan
+                    )
+                }
+            }
+            Column(
+                Modifier.width(30.dp)
+            ) {
+                IconButton(onClick = {
+                    //  run
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = "Run",
+                        tint = Color.Green
+                    )
+                }
+            }
+            Column(
+                Modifier.width(30.dp)
+            ) {
+                IconButton(onClick = {
+                    var currentActions = actions.filterIndexed { i, _ -> i != index }.toMutableList()
+                    onCurrentActionsDelete(currentActions)
+                    event.config = event.config!!.copy(actions = currentActions)
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Close",
+                        tint = Color.Red
                     )
                 }
             }
         }
         Divider(color = Color.DarkGray, thickness = 1.dp)
     }
-    var isAddingAction by remember { mutableStateOf(false) }
+
     if (isAddingAction) {
         onEditing(true)
         ActionsFormDialog(
+            selectedAction= selectedAction,
             onDismissRequest = { isAddingAction = false },
             onConfirmation = { action ->
-                                actions.add(action)
-                                event.config = event.config!!.copy(actions = actions)
+                if (selectedAction != null && selectedIndex != -1){
+                    actions[selectedIndex] = action
+                    selectedAction = Action()
+                    selectedIndex = -1
+                }else{
+                    actions.add(action)
+                }
+                event.config = event.config!!.copy(actions = actions)
                 isAddingAction = false
             }
         )
@@ -964,7 +985,7 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
         Modifier
             .padding(2.dp)
             .fillMaxWidth()
-            .background(Color(0xFF004D4D)),
+            .background(Color.Transparent),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -977,7 +998,7 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
             )
         }
     }
-    Divider(color = Color.DarkGray, thickness = 1.dp)
+//    Divider(color = Color.DarkGray, thickness = 1.dp)
     Row {
         Button(
             onClick = {
@@ -1008,9 +1029,9 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
         }
     }
     Divider(
-        color = Color.DarkGray,
+        color = Color.White,
         thickness = 1.dp,
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
     )
 }
 
@@ -1124,140 +1145,140 @@ fun FormRow(onPortFormChanged: (Port) -> Unit) {
 }
 
 @Composable
-fun FormActionRow(onActionFormChanged: (Action) -> Unit) {
-    var actionName by remember { mutableStateOf("SET_WHATEVER") }
-    var scheduled by remember { mutableStateOf("XX:XX:XXXX:XX:XX:00") }
-    var callbackName by remember { mutableStateOf("my_function") }
-    var arguments by remember { mutableStateOf("{'key':'value'}") }
+fun FormActionRow(selectedAction: Action, onActionFormChanged: (Action) -> Unit) {
+    var actionName by remember { if (selectedAction!=null) mutableStateOf(selectedAction.actionName.toString()) else mutableStateOf("SET_WHATEVER") }
+    var scheduled by remember { if (selectedAction!=null) mutableStateOf(selectedAction.scheduled.toString()) else mutableStateOf("XX:XX:XXXX:XX:XX:00") }
+    var callbackName by remember { if (selectedAction!=null) mutableStateOf(selectedAction.callbackName.toString()) else mutableStateOf("my_function") }
+    var arguments by remember { if (selectedAction!=null) mutableStateOf(selectedAction.arguments.toString()) else mutableStateOf("{'key':'value'}") }
 
-        Row(
-            Modifier
-                .padding(2.dp)
-                .fillMaxWidth().background(Color(0xFF0E131C)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.padding(3.dp),
-                value = actionName,
-                onValueChange = { newValue ->
-                    actionName = newValue
-                    val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
-                    onActionFormChanged(action)
-                },
-                label = { Text("Name") },
-                placeholder = { Text("MY_ACTION") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.Cyan,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color.Cyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    cursorColor = Color.Cyan,
-                    selectionColors = TextSelectionColors(
-                        handleColor = Color(0xFF0E131C),
-                        backgroundColor = Color(0x5500DDFF),
-                    )
+    Row(
+        Modifier
+            .padding(2.dp)
+            .fillMaxWidth().background(Color(0xFF0E131C)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        OutlinedTextField(
+            modifier = Modifier.padding(3.dp),
+            value = actionName,
+            onValueChange = { newValue ->
+                actionName = newValue
+                val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
+                onActionFormChanged(action)
+            },
+            label = { Text("Name") },
+            placeholder = { Text("MY_ACTION") },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedLabelColor = Color.Cyan,
+                unfocusedLabelColor = Color.White,
+                focusedBorderColor = Color.Cyan,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = Color.White,
+                cursorColor = Color.Cyan,
+                selectionColors = TextSelectionColors(
+                    handleColor = Color(0xFF0E131C),
+                    backgroundColor = Color(0x5500DDFF),
                 )
             )
-        }
-        Row(
-            Modifier
-                .padding(2.dp)
-                .fillMaxWidth().background(Color(0xFF0E131C)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.padding(3.dp),
-                value = scheduled,
-                onValueChange = { newValue ->
-                    scheduled = newValue
-                    val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
-                    onActionFormChanged(action)
-                },
-                label = { Text("Scheduled") },
-                placeholder = { Text("XX:XX:XXXX:XX:XX:00") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.Cyan,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color.Cyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    cursorColor = Color.Cyan,
-                    selectionColors = TextSelectionColors(
-                        handleColor = Color(0xFF0E131C),
-                        backgroundColor = Color(0x5500DDFF),
-                    )
+        )
+    }
+    Row(
+        Modifier
+            .padding(2.dp)
+            .fillMaxWidth().background(Color(0xFF0E131C)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        OutlinedTextField(
+            modifier = Modifier.padding(3.dp),
+            value = scheduled,
+            onValueChange = { newValue ->
+                scheduled = newValue
+                val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
+                onActionFormChanged(action)
+            },
+            label = { Text("Scheduled") },
+            placeholder = { Text("XX:XX:XXXX:XX:XX:00") },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedLabelColor = Color.Cyan,
+                unfocusedLabelColor = Color.White,
+                focusedBorderColor = Color.Cyan,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = Color.White,
+                cursorColor = Color.Cyan,
+                selectionColors = TextSelectionColors(
+                    handleColor = Color(0xFF0E131C),
+                    backgroundColor = Color(0x5500DDFF),
                 )
             )
-        }
-        Row(
-            Modifier
-                .padding(2.dp)
-                .fillMaxWidth().background(Color(0xFF0E131C)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.padding(3.dp),
-                value = arguments,
-                onValueChange = { newValue ->
-                    arguments = newValue
-                    val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
-                    onActionFormChanged(action)
-                },
-                label = { Text("Arguments") },
-                placeholder = { Text("{'key':'value'}") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.Cyan,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color.Cyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    cursorColor = Color.Cyan,
-                    selectionColors = TextSelectionColors(
-                        handleColor = Color(0xFF0E131C),
-                        backgroundColor = Color(0x5500DDFF),
-                    )
+        )
+    }
+    Row(
+        Modifier
+            .padding(2.dp)
+            .fillMaxWidth().background(Color(0xFF0E131C)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        OutlinedTextField(
+            modifier = Modifier.padding(3.dp),
+            value = arguments,
+            onValueChange = { newValue ->
+                arguments = newValue
+                val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
+                onActionFormChanged(action)
+            },
+            label = { Text("Arguments") },
+            placeholder = { Text("{'key':'value'}") },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedLabelColor = Color.Cyan,
+                unfocusedLabelColor = Color.White,
+                focusedBorderColor = Color.Cyan,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = Color.White,
+                cursorColor = Color.Cyan,
+                selectionColors = TextSelectionColors(
+                    handleColor = Color(0xFF0E131C),
+                    backgroundColor = Color(0x5500DDFF),
                 )
             )
-        }
-        Row(
-            Modifier
-                .padding(2.dp)
-                .fillMaxWidth().background(Color(0xFF0E131C)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            OutlinedTextField(
-                modifier = Modifier.padding(3.dp),
-                value = callbackName,
-                onValueChange = { newValue ->
-                    callbackName = newValue
-                    val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
-                    onActionFormChanged(action)
-                },
-                label = { Text("Function") },
-                placeholder = { Text("my_function") },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.Cyan,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color.Cyan,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    unfocusedBorderColor = Color.White,
-                    cursorColor = Color.Cyan,
-                    selectionColors = TextSelectionColors(
-                        handleColor = Color(0xFF0E131C),
-                        backgroundColor = Color(0x5500DDFF),
-                    )
+        )
+    }
+    Row(
+        Modifier
+            .padding(2.dp)
+            .fillMaxWidth().background(Color(0xFF0E131C)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        OutlinedTextField(
+            modifier = Modifier.padding(3.dp),
+            value = callbackName,
+            onValueChange = { newValue ->
+                callbackName = newValue
+                val action = setFormValueAsAction(actionName, scheduled, arguments, callbackName)
+                onActionFormChanged(action)
+            },
+            label = { Text("Function") },
+            placeholder = { Text("my_function") },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedLabelColor = Color.Cyan,
+                unfocusedLabelColor = Color.White,
+                focusedBorderColor = Color.Cyan,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                unfocusedBorderColor = Color.White,
+                cursorColor = Color.Cyan,
+                selectionColors = TextSelectionColors(
+                    handleColor = Color(0xFF0E131C),
+                    backgroundColor = Color(0x5500DDFF),
                 )
             )
-        }
+        )
+    }
 }
 
 fun setFormValueAsPort(pin: String, alias: String, mode: String, type: String): Port {
@@ -1407,6 +1428,7 @@ fun PortsFormDialog(
 
 @Composable
 fun ActionsFormDialog(
+    selectedAction: Action,
     onDismissRequest: () -> Unit,
     onConfirmation: (Action) -> Unit,
 ) {
@@ -1441,6 +1463,7 @@ fun ActionsFormDialog(
             ) {
                 /** ACTIONS FORM ***/
                 FormActionRow (
+                    selectedAction = selectedAction,
                     onActionFormChanged = {
                         actionFormValue = it
                     }

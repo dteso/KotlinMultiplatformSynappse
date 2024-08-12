@@ -42,9 +42,9 @@ data class Port(
 
 @Serializable
 data class Action(
-    val actionName: String,
-    val arguments: String,
-    val callbackName: String,
-    val scheduled: String
+    val actionName: String? = null,
+    val arguments: String? = null,
+    val callbackName: String? = null,
+    val scheduled: String? = null
 )
 
