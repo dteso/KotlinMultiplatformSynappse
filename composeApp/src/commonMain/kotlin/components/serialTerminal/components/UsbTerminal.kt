@@ -63,6 +63,8 @@ fun TerminalConsole(dataLines: List<String>){
                         || receivedDataSplitted.contains("WAIT]") -> Color(0xFFFF6600)
                 // error
                 receivedDataSplitted.contains("ERROR]") -> Color.Red
+                receivedDataSplitted.contains("SYNAPPSE.SIZE]") -> Color(0XAAFF0066)
+                receivedDataSplitted.contains("SYNAPPSE.EXECUTION]") -> Color.Blue
                 // default
                 else -> Color.White
             }

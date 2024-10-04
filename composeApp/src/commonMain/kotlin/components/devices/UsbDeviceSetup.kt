@@ -23,6 +23,7 @@ import androidx.compose.material.Switch
 import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.sharp.AddCircle
@@ -915,6 +916,21 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
             ) {
                 Text(action.actionName!!.uppercase())
             }
+            if(action.scheduled != null && action.scheduled != "" && action.scheduled.uppercase() != "NONE"){
+                Column(
+                    Modifier.width(30.dp)
+                ) {
+                    IconButton(onClick = {
+                        //None
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.DateRange,
+                            contentDescription = "Scheduled",
+                            tint = Color.Cyan
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.weight(1f))
             Column(
                 Modifier.width(30.dp)
@@ -935,7 +951,12 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
                 Modifier.width(30.dp)
             ) {
                 IconButton(onClick = {
-                    //  run
+                    val executeCommand = "---exec:${action.callbackName}|${action.arguments}"
+                    SerialPortImpl.write(
+                        executeCommand.toByteArray(
+                            Charsets.UTF_8
+                        )
+                    )
                 }) {
                     Icon(
                         imageVector = Icons.Filled.PlayArrow,
@@ -967,7 +988,11 @@ fun ActionsManager(event: Event, actions: MutableList<Action>, titleTextModifier
         onEditing(true)
         ActionsFormDialog(
             selectedAction= selectedAction,
-            onDismissRequest = { isAddingAction = false },
+            onDismissRequest = {
+                isAddingAction = false
+                selectedAction = Action()
+                selectedIndex = -1
+                               },
             onConfirmation = { action ->
                 if (selectedAction != null && selectedIndex != -1){
                     actions[selectedIndex] = action

@@ -218,7 +218,7 @@ class LoginFormScreen : Screen{
         print(loginModel)
 
         // Realizamos la petición al servidor
-        val url = "http://192.168.1.42:4411/api/auth/login"
+        val url = "http://192.168.1.41:4411/api/auth/login"
         val response: HttpResponse = client.post(url) {
             contentType(ContentType.Application.Json)  // Establecemos el tipo de contenido
             setBody(body)
